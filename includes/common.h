@@ -1,0 +1,17 @@
+#ifndef COMMON_H
+#define COMMON_H
+
+#include<vector>
+#include<string>
+#include<cmath>
+#include<iostream>
+#include<array>
+#include<stdexcept>
+
+constexpr double gcon = 8.314462;       // Universal gas constant: Joules / mol-Kelvin
+constexpr double bcon = 1.380649e-23;   // Boltzmann constant: Joules / Kelvin
+constexpr double acon  = 6.022140e23;   // Avogradro's constant: 1/mol 
+
+typedef std::vector<double> Vector;
+
+#endif
