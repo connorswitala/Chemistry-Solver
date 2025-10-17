@@ -215,10 +215,10 @@ namespace common_air {
         air.Y = vector<double>(air.N_SP);
         air.X = vector<double>(air.N_SP);
 
-        air.gam = 1.4;
+        air.gamma = 1.4;
         air.R = 287.0;
-        air.cv = air.R/(air.gam - 1.0);
-        air.cp = air.gam * air.cv;
+        air.cv = air.R/(air.gamma - 1.0);
+        air.cp = air.gamma * air.cv;
 
         air.X0 = { 0.7808, 0.2192, 0.0, 0.0, 0.0};
 
@@ -253,10 +253,10 @@ namespace common_air {
         air.X = vector<double>(air.N_SP);
 
 
-        air.gam = 1.4;
+        air.gamma = 1.4;
         air.R = 287.0;
-        air.cv = air.R/(air.gam - 1.0);
-        air.cp = air.gam * air.cv;
+        air.cv = air.R/(air.gamma - 1.0);
+        air.cp = air.gamma * air.cv;
 
         air.X0 = { 0.7808, 0.2095, 0.0, 0.0, 0.0, 0.0097, 0.0, 0.0, 0.0, 0.0, 0.0};
 

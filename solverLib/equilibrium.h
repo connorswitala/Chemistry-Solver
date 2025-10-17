@@ -16,14 +16,15 @@ class equilibrium {
     int T_flag; // Flags which set of NASA coefficients to use.
     int J_SIZE;
 
-    equilibrium(string gas_type, double rho, double e);
-    void diplay_gas_properties();   
+    equilibrium(string gas_type);
+    void display_gas_properties();   
 
-    void compute_equilibrium();
+    void compute_equilibrium(double rho, double e);
 
     private:
 
     Vector Ts;
+    Vector X;
 
     inline void findTRange();
     inline array<double, 7> temp_base(double T);

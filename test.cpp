@@ -11,14 +11,12 @@ int main() {
 
     auto start = NOW;
 
-    equilibrium myeq(mix_type, 0.1, 6e5);
-    myeq.compute_equilibrium();
+    equilibrium myeq(mix_type);
+    myeq.compute_equilibrium(0.1, 1e7);
 
     auto end = NOW;
     auto duration = chrono::duration<double>(end - start).count();
-    cout << "-- Time elaped: " << duration << " s." << endl << endl;
-
-    myeq.diplay_gas_properties();
+    cout << endl << "-- Time elaped: " << duration << " s." << endl << endl;
 
     return 0;
 }

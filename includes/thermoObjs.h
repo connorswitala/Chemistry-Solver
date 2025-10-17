@@ -18,7 +18,7 @@ struct SpeciesInfo {
 struct mix {
     vector<SpeciesInfo> species;
     Vector H0, S0, mu0, Cp0;
-    double R, gamma, cp, cv, gam;
+    double R, gamma, cp, cv, MW;
     double e, rho, T, p;
     Vector Y;
     Vector X, X0;
