@@ -15,6 +15,7 @@ class equilibrium {
     mix gas;
     int T_flag; // Flags which set of NASA coefficients to use.
     int J_SIZE;
+    int NCOEF;
 
     equilibrium(string gas_type);
     void display_gas_properties();   
@@ -35,6 +36,7 @@ class equilibrium {
     void compute_molar_fractions();
     void compute_mass_fractions();
     void redistribute_thermo(); 
+    void compute_formation_enthalpies();
 
 
     double norm(double* v1, double* v2);

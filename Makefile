@@ -11,13 +11,13 @@ BUILD_DIR      := build
 # Files
 COMMON_AIR_SRC := $(COMMON_AIR_DIR)/commonMixes.cpp
 SOLVER_SRC     := $(SOLVER_DIR)/equilibrium.cpp
-TEST_SRC       := test.cpp
+TEST_SRC       := main.cpp
 
 COMMON_AIR_OBJ := $(BUILD_DIR)/commonMixes.o
 SOLVER_OBJ     := $(BUILD_DIR)/equilibrium.o
-TEST_OBJ       := $(BUILD_DIR)/test.o
+TEST_OBJ       := $(BUILD_DIR)/main.o
 
-TEST_TARGET    := test
+TEST_TARGET    := gibbs
 
 # ===== Targets =====
 all: $(TEST_TARGET)

@@ -13,11 +13,12 @@ struct SpeciesInfo {
     double theta_v;
     int q;
     double R;
+    double hf0;
 };
 
 struct mix {
     vector<SpeciesInfo> species;
-    Vector H0, S0, mu0, Cp0;
+    Vector H0, S0, mu0, Cp0, hf;
     double R, gamma, cp, cv, MW;
     double e, rho, T, p;
     Vector Y;
@@ -25,6 +26,9 @@ struct mix {
     int N_SP, N_EL, N_ION;
     Vector a, b;
     double initial_moles;
+    vector<int> diatomic_list;
+    vector<int> mono_list;
+    vector<double> guesses;
 };
 
 #endif

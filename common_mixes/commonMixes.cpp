@@ -18,7 +18,8 @@ namespace common_air {
         },
         3521.0,
         0,
-        gcon / N2.mw
+        gcon / N2.mw * 1000.0,
+        0.0
     };
 
     SpeciesInfo O2 {
@@ -36,7 +37,8 @@ namespace common_air {
         },
           2256.0,
           0,
-          gcon / O2.mw
+          gcon / O2.mw * 1000.0,
+          0.0
     };
 
     SpeciesInfo NO {
@@ -54,7 +56,8 @@ namespace common_air {
         },
            3122.0,
            0,
-           gcon / NO.mw
+           gcon / NO.mw * 1000.0,
+           9.1271e4
     };
 
     SpeciesInfo N {
@@ -72,7 +75,8 @@ namespace common_air {
         },
         0.0,
         0,
-        gcon / N.mw
+        gcon / N.mw * 1000.0,
+        4.7268e5
     };
 
     SpeciesInfo O {
@@ -90,7 +94,8 @@ namespace common_air {
         },
         0.0,
         0,
-        gcon / O.mw
+        gcon / O.mw * 1000.0,
+        2.49175e5
     };
 
     SpeciesInfo Ar {
@@ -108,7 +113,8 @@ namespace common_air {
         },
         0.0,
         0,
-        gcon / Ar.mw
+        gcon / Ar.mw * 1000.0,
+        0.0
     };
 
     SpeciesInfo Ar_ion {
@@ -126,7 +132,8 @@ namespace common_air {
         },
         0.0,
         1,
-        gcon / Ar_ion.mw
+        gcon / Ar_ion.mw * 1000.0,
+        1.5268e6
     };
 
     SpeciesInfo N_ion {
@@ -144,7 +151,8 @@ namespace common_air {
         },
         0.0,
         1,
-        gcon / N_ion.mw
+        gcon / N_ion.mw * 1000.0,
+        1.8821e6
     };
 
     SpeciesInfo O_ion {
@@ -162,11 +170,12 @@ namespace common_air {
         },
         0.0,
         1,
-        gcon / O_ion.mw
+        gcon / O_ion.mw * 1000.0,
+        1.56879e6
     };
   
     SpeciesInfo NO_ion {
-        "NO",
+        "NO+",
         30.00555,
         {
             1.398106635e+03, -1.590446941e+02, 5.122895400e+00, -6.394388620e-03, 1.123918342e-05,
@@ -180,12 +189,13 @@ namespace common_air {
         },
         3360.0,
         1,
-        gcon / NO_ion.mw
+        gcon / NO_ion.mw * 1000.0,
+        9.9081e5
     };
 
     SpeciesInfo e_ion {
         "e-",
-        0.000548579903/1000.0,
+        0.000548579903,
         {
             0.000000000e+00, 0.000000000e+00, 2.500000000e+00, 0.000000000e+00, 0.000000000e+00,
             0.000000000e+00, 0.000000000e+00, -7.453750000e+02, -1.172081224e+01,
@@ -198,7 +208,8 @@ namespace common_air {
         },
         0.0,
         -1,
-        gcon / e_ion.mw
+        gcon / e_ion.mw * 1000.0,
+        0.0
     };
 
     mix make_air5() {
@@ -212,8 +223,12 @@ namespace common_air {
         air.S0 = vector<double>(air.N_SP);
         air.mu0 = vector<double>(air.N_SP);
         air.Cp0 = vector<double>(air.N_SP);
+        air.hf = vector<double>(air.N_SP);
         air.Y = vector<double>(air.N_SP);
         air.X = vector<double>(air.N_SP);
+        air.mono_list = {3, 4};
+        air.diatomic_list = {0, 1, 2};
+
 
         air.gamma = 1.4;
         air.R = 287.0;
@@ -249,8 +264,14 @@ namespace common_air {
         air.S0 = vector<double>(air.N_SP);
         air.mu0 = vector<double>(air.N_SP);
         air.Cp0 = vector<double>(air.N_SP);
+        air.hf = vector<double>(air.N_SP);
         air.Y = vector<double>(air.N_SP);
         air.X = vector<double>(air.N_SP);
+        air.mono_list = {3, 4, 5, 6, 7, 8, 10};
+        air.diatomic_list = {0, 1, 2, 9};
+        air.guesses = {0.7808, 0.2095, 0.0, 0.0, 0.0, 0.0097, 0.0, 0.0, 0.0, 0.0, 0.0,
+                0.6340, 0.0059, 0.0282, 0.0125, 0.31125, 0.0081, 0.00001, 0.00001, 0.00001, 0.00001, 0.00001,                         
+                0.00079, 0.00001, 0.0001, 0.6160, 0.1748, 0.0036, 0.0008, 0.0873, 0.0141, 0.0001, 0.1024};
 
 
         air.gamma = 1.4;

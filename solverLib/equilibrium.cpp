@@ -5,7 +5,7 @@ equilibrium::equilibrium(string gas_type) {
 
     if (gas_type == "air11") gas = common_air::make_air11();
     if (gas_type == "air5") gas = common_air::make_air5(); 
-
+    NCOEF = 9;
 }
 
 inline void equilibrium::findTRange() {
@@ -64,7 +64,7 @@ void equilibrium::NASA_fits() {
                    + 0.25 * coeff[6] * Ts[6] 
                    + coeff[8]);
 
-        gas.Cp0[j] = gcon / gas.species[j].mw * (
+        gas.Cp0[j] = gcon * (
                        coeff[0] * Ts[0] 
                      + coeff[1] * Ts[1] 
                      + coeff[2] 
@@ -78,55 +78,69 @@ void equilibrium::NASA_fits() {
 }
 
 void equilibrium::compute_equilibrium(double rho, double e) {
-
-    double T_new;     
+    
+    double e_new = 0, cv_new = 0;     
     gas.rho = rho;
     gas.e = e;
 
     if (e > 1e7) {
-        T_new = 15000.0;
+        gas.T = 15000.0;
     }
-    else T_new = gas.e / gas.cv;
+    else gas.T = gas.e / gas.cv;
 
-    gas.p = rho * gas.R * T_new; 
-    gas.T = 0;
+    gas.p = rho * gas.R * gas.T; 
+
 
     int iteration = 0;
 
     J_SIZE = gas.N_SP + gas.N_EL + 1;
 
-    X = vector<double>(gas.N_SP);
-    double avg_x = gas.initial_moles / gas.N_SP;
-    for (int i = 0; i < gas.N_SP; ++i) X[i] = avg_x;
+    X = vector<double>(J_SIZE);
+    findTRange();
+    for (int i = 0; i < gas.N_SP; ++i) {
+        X[i] = gas.guesses[T_flag * gas.N_SP + i];
+    }   
+    
+    // double avg_x = gas.initial_moles / gas.N_SP;
+    // for (int i = 0; i < gas.N_SP; ++i) X[i] = avg_x;
 
-    while (fabs(T_new - gas.T) >= 0.01) {
+    while (fabs(e_new - e) >= 100) {
 
-        gas.T = T_new;
         findTRange();
         NASA_fits();
         compute_molar_fractions();
+        compute_formation_enthalpies();
 
-        gas.cp = 0.0;
-        gas.MW = 0.0;
-
-        for (int i = 0; i < gas.N_SP; ++i) {
-            gas.MW += gas.X[i] * gas.species[i].mw;
-            gas.cp += gas.Y[i] * gas.Cp0[i];
+        e_new = 0.0;
+        for (int i : gas.diatomic_list) {
+            e_new += gas.Y[i] * (2.5 * gas.species[i].R * gas.T + gas.species[i].R * gas.species[i].theta_v / (exp(gas.species[i].theta_v / gas.T) - 1) + gas.hf[i]); //diatomic species
         }
 
-        gas.cp*= 1000.0;
-        gas.R = gcon * 1000 / gas.MW;  
-        gas.cv = gas.cp - gas.R;
-        T_new = gas.e / gas.cv;
-        gas.p = gas.rho * gas.R * T_new;
+        for (int i : gas.mono_list) {
+            e_new += gas.Y[i] * (1.5 * gas.species[i].R * gas.T + gas.hf[i]); // atomic species
+        }
+        
+        cv_new = e_new / gas.T;
+        gas.T = gas.T - 0.6 * (e_new - e) / cv_new;
+
+        gas.MW = 0.0;
+        for (int i = 0; i < gas.N_SP; ++i) {    
+            gas.MW += gas.X[i] * gas.species[i].mw;
+        }
+        
+        gas.R = gcon * 1000.0 / gas.MW;
+        gas.p = gas.rho * gas.R * gas.T;
+        gas.cv = cv_new;
         iteration++;
         
     }
 
+    gas.cp = gas.R + gas.cv;
     gas.gamma = gas.cp / gas.cv;
-    display_gas_properties();
-    cout << "Outer iterations: " << iteration << endl;
+    cout << "-- Outer iterations: " << iteration << endl;
 }
+
+
 
 void equilibrium::compute_molar_fractions() {
     vector<double> X_new(J_SIZE, 0.0), dx(J_SIZE, 0.0), F(J_SIZE, 0.0), J(J_SIZE * J_SIZE, 0.0); 
@@ -138,7 +152,6 @@ void equilibrium::compute_molar_fractions() {
     int iteration = 0;
     
     double residual = norm(X_new.data(), X.data());
-
 
     while (residual > 1e-6) {
 
@@ -184,15 +197,13 @@ void equilibrium::compute_molar_fractions() {
         }
 
         double sum = 0.0;
-        for (int i = nsp - nion; i < nsp - 1; ++i) sum += X[i];
-        F[J_SIZE - 1] = -(sum - X[nsp - 1]);
-
+        for (int i = nsp - nion; i < nsp; ++i) sum += X[i] * gas.species[i].q;
+        F[J_SIZE - 1] = -sum;
+        
         matrix_divide(J.data(), F.data(), dx.data(), J_SIZE, 1);
 
         for (int i = 0; i < J_SIZE; ++i) {
-
-                double dx_safe = min(max(dx[i], -50.0), 50.0); // Clamp dx 
-                X_new[i] = X[i] * exp(dx_safe);
+                X_new[i] = X[i] * exp(dx[i]);
 
                 if (isnan(X_new[i]) || isinf(X_new[i])) {
                         cout << "Nonphysical molar fraction computed (NaN or Inf)" << endl;
@@ -209,31 +220,44 @@ void equilibrium::compute_molar_fractions() {
     }
 
     double sum = 0.0;
+    for (int i = 0; i < nsp; ++i) sum += X[i];
 
     for (int i = 0; i < nsp; ++i) {
-            sum += X_new[i];
+            gas.X[i] = X_new[i]/sum;
     }
-
-    for (int i = 0; i < nsp; ++i) {
-            gas.X[i] = X_new[i] / sum; // Normalize molar fractions
-    }
-
-    cout << "-- It took " << iteration << " iterations to complete." << endl;
 
     compute_mass_fractions();
 
 }
 
 void equilibrium::compute_mass_fractions() {
-        double MW_mix = 0.0;
+
+        gas.MW = 0.0;
         for (int i = 0; i < gas.N_SP; ++i) {
-                MW_mix += gas.X[i] * gas.species[i].mw;
+                gas.MW += gas.X[i] * gas.species[i].mw;
         }
 
         for (int i = 0; i < gas.N_SP; ++i) {
-                gas.Y[i] = (gas.X[i] * gas.species[i].mw) / MW_mix;
+                gas.Y[i] = (gas.X[i] * gas.species[i].mw) / gas.MW;
         }
 }
+
+void equilibrium::compute_formation_enthalpies() {
+    
+    gas.hf[0] = 0.0;    // N2
+    gas.hf[1] = 0.0;    // O2
+    gas.hf[2] = (gas.H0[2] - 0.5 * gas.H0[0] - 0.5 * gas.H0[1]) * 1000 / gas.species[2].mw;  // NO
+    gas.hf[3] = (gas.H0[3] - 0.5 * gas.H0[0]) * 1000 / gas.species[3].mw;    // N
+    gas.hf[4] = (gas.H0[4] - 0.5 * gas.H0[1]) * 1000 / gas.species[4].mw;    // O
+    gas.hf[5] = 0.0;    // Ar
+    gas.hf[6] = (gas.H0[6] - gas.H0[5]) * 1000 / gas.species[6].mw;  // Ar+
+    gas.hf[7] = (gas.H0[7] - 0.5 * gas.H0[0]) * 1000 / gas.species[7].mw;    // N+
+    gas.hf[8] = (gas.H0[8] - 0.5 * gas.H0[1]) * 1000 / gas.species[8].mw;    // O+
+    gas.hf[9] = (gas.H0[9] - 0.5 * gas.H0[0] - 0.5 * gas.H0[1]) * 1000 / gas.species[9].mw;   // NO+
+    gas.hf[10] = 0.0;
+
+}
+
 
 double equilibrium::norm(double* v1, double* v2) {
         double result = 0.0;
@@ -244,33 +268,28 @@ double equilibrium::norm(double* v1, double* v2) {
 }
 
 void equilibrium::display_gas_properties() {
-    cout << endl << "-- Mixture Gas Temperature: " << gas.T << " (K)" << endl;
-    cout << "-- Mixture Gas Pressure: " << gas.p << " (J/kg-K)" << endl;
-    cout << "-- Mixture Gas Constant: " << gas.R << " (J/kg-K)" << endl;
-    cout << "-- Mixture Gas gamma: " << gas.gamma << " (J/kg-K)" << endl;
-    cout << "-- Mixture Gas cp: " << gas.cp << " (J/kg-K)" << endl;
-    cout << "-- Mixture Gas cv: " << gas.cv << " (J/kg-K)" << endl;
-    cout << "-- Mixture Gas MW: " << gas.MW << " (J/kg-K)" << endl;
+    cout << endl << setw(30) << "Mixture Temperature: " << gas.T << " [K]" << endl;
+    cout << setw(30) << "Mixture Pressure: " << gas.p / 1000.0 << " [kPa]" << endl;
+    cout << setw(30) << "Mixture Density: " << gas.rho << " [kg/m^3]" << endl;
+    cout << setw(30) << "Mixture Internal Energy: " << gas.e / 1000.0 << " [kJ/kg]" << endl;
+    cout << setw(30) << "Mixture Gas Constant: " << gas.R << " [J/kg-K]" << endl;
+    cout << setw(30) << "Mixture cp: " << gas.cp << " [J/kg-K]" << endl;
+    cout << setw(30) << "Mixture cv: " << gas.cv << " [J/kg-K]" << endl;
+    cout << setw(30) << "Mixture gamma: " << gas.gamma << endl;
+    cout << setw(30) << "Mixture MW: " << gas.MW << " [g/mol]" << endl;
 
 
-    cout << "-- Species Molar Fractions -- " << endl;
+    cout << endl << "-- Species Molar Fractions -- " << endl;
     for (int i = 0; i < gas.N_SP; ++i) {
         cout << setw(3) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.X[i] << "\t";
+        if ((i + 1) % 4 == 0) cout << endl;
     }
 
     cout << endl << endl << "-- Species Mass Fractions -- " << endl;
     for (int i = 0; i < gas.N_SP; ++i) {
         cout << setw(3) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
+        if ((i + 1) % 4 == 0) cout << endl;
     }
 
-    cout << endl << endl << "-- Species Gas Constants -- " << endl;
-    for (int i = 0; i < gas.N_SP; ++i) {
-        cout << setw(3) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.species[i].R << "\t";
-    }
-
-    cout << endl << endl << "-- Species Gas cp -- " << endl;
-    for (int i = 0; i < gas.N_SP; ++i) {
-        cout << setw(3) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Cp0[i] << "\t";
-    }
 
 }
