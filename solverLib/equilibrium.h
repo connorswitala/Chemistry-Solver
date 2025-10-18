@@ -6,45 +6,43 @@
 
 using namespace std;
 
-
-
 class equilibrium {
         
     public:
 
-    mix gas;
-    int T_flag; // Flags which set of NASA coefficients to use.
-    int J_SIZE;
-    int NCOEF;
+    mix gas;    // Main object.
 
-    equilibrium(string gas_type);
-    void display_gas_properties();   
+    equilibrium(string gas_type);                       // Constructor.
 
-    void compute_equilibrium(double rho, double e);
+    void compute_equilibrium(double rho, double e);     // All in one Equilibirum solver function
 
+    void display_gas_properties();                      // Display results.
+    
     private:
 
-    Vector Ts;
-    Vector X;
+    int T_flag; // Flags which set of NASA coefficients to use.
 
-    inline void findTRange();
-    inline array<double, 7> temp_base(double T);
+    int J_SIZE; // Size of solution vector in Newton Method.
 
-    void NASA_fits();
+    int NCOEF;  // Number of NASA polynomial coefficients (Always 9).
 
+    Vector Ts;  // Temperature terms in NASA fits.
 
-    void compute_molar_fractions();
-    void compute_mass_fractions();
-    void redistribute_thermo(); 
-    void compute_formation_enthalpies();
+    Vector X;   // Old solution vector of molar concentrations..
 
 
-    double norm(double* v1, double* v2);
-    // ====== Display Functions ======
+    inline void findTRange();                       // Finds Temperature range to use proper NASA coeff.
 
+    inline array<double, 7> temp_base(double T);    // Calculates Temperature functions for NASA poly.
 
+    void NASA_fits();                               // Calculates H0, S0, and MU0.
+
+    void compute_molar_fractions();                 // Newton Iteration to solve for concentrations.
+
+    void compute_mass_fractions();                  // Converts molar fractions to mass fractions.
+
+    void compute_formation_enthalpies();            // Computes formation enthalpies.
 };
-
 
 #endif
 

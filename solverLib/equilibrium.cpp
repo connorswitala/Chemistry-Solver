@@ -75,6 +75,8 @@ void equilibrium::NASA_fits() {
 
         gas.mu0[j] = gas.H0[j] - gas.T * gas.S0[j];        
     }
+
+    compute_formation_enthalpies();
 }
 
 void equilibrium::compute_equilibrium(double rho, double e) {
@@ -106,10 +108,8 @@ void equilibrium::compute_equilibrium(double rho, double e) {
 
     while (fabs(e_new - e) >= 100) {
 
-        findTRange();
         NASA_fits();
         compute_molar_fractions();
-        compute_formation_enthalpies();
 
         e_new = 0.0;
         for (int i : gas.diatomic_list) {
@@ -139,8 +139,6 @@ void equilibrium::compute_equilibrium(double rho, double e) {
     gas.gamma = gas.cp / gas.cv;
     cout << "-- Outer iterations: " << iteration << endl;
 }
-
-
 
 void equilibrium::compute_molar_fractions() {
     vector<double> X_new(J_SIZE, 0.0), dx(J_SIZE, 0.0), F(J_SIZE, 0.0), J(J_SIZE * J_SIZE, 0.0); 
@@ -258,15 +256,6 @@ void equilibrium::compute_formation_enthalpies() {
 
 }
 
-
-double equilibrium::norm(double* v1, double* v2) {
-        double result = 0.0;
-        for (int i = 0; i < 14; ++i) {
-                result += fabs(v1[i] - v2[i]) * fabs(v1[i] - v2[i]);
-        }
-        return sqrt(result); 
-}
-
 void equilibrium::display_gas_properties() {
     cout << endl << setw(30) << "Mixture Temperature: " << gas.T << " [K]" << endl;
     cout << setw(30) << "Mixture Pressure: " << gas.p / 1000.0 << " [kPa]" << endl;
@@ -279,15 +268,15 @@ void equilibrium::display_gas_properties() {
     cout << setw(30) << "Mixture MW: " << gas.MW << " [g/mol]" << endl;
 
 
-    cout << endl << "-- Species Molar Fractions -- " << endl;
+    cout << endl << setw(67) << "====: Species Molar Fractions :==== " << endl;
     for (int i = 0; i < gas.N_SP; ++i) {
-        cout << setw(3) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.X[i] << "\t";
+        cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.X[i] << "\t";
         if ((i + 1) % 4 == 0) cout << endl;
     }
 
-    cout << endl << endl << "-- Species Mass Fractions -- " << endl;
+    cout << endl << endl << setw(67) <<  "====: Species Mass Fractions :==== " << endl;
     for (int i = 0; i < gas.N_SP; ++i) {
-        cout << setw(3) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
+        cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
         if ((i + 1) % 4 == 0) cout << endl;
     }
 

@@ -65,5 +65,15 @@ inline void matrix_divide(double* A, const double* B, double* X, int n, int m) {
     }
 }
 
+inline double norm(double* v1, double* v2) {
+        double result = 0.0;
+        for (int i = 0; i < 14; ++i) {
+                result += fabs(v1[i] - v2[i]) * fabs(v1[i] - v2[i]);
+        }
+        return sqrt(result); 
+}
+
+
+
 #endif
 
