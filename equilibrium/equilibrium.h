@@ -17,6 +17,8 @@ class equilibrium {
     void compute_equilibrium(double rho, double e);     // All in one Equilibirum solver function
 
     void display_gas_properties();                      // Display results.
+
+    void plot_concentrations_for_T_range();
     
     private:
 
@@ -25,8 +27,6 @@ class equilibrium {
     int J_SIZE; // Size of solution vector in Newton Method.
 
     int NCOEF;  // Number of NASA polynomial coefficients (Always 9).
-
-    Vector Ts;  // Temperature terms in NASA fits.
 
     Vector X;   // Old solution vector of molar concentrations..
 
@@ -42,6 +42,7 @@ class equilibrium {
     void compute_mass_fractions();                  // Converts molar fractions to mass fractions.
 
     void compute_formation_enthalpies();            // Computes formation enthalpies.
+
 };
 
 #endif

@@ -222,7 +222,6 @@ namespace common_air {
         air.H0 = vector<double>(air.N_SP);
         air.S0 = vector<double>(air.N_SP);
         air.mu0 = vector<double>(air.N_SP);
-        air.Cp0 = vector<double>(air.N_SP);
         air.hf = vector<double>(air.N_SP);
         air.Y = vector<double>(air.N_SP);
         air.X = vector<double>(air.N_SP);
@@ -263,7 +262,6 @@ namespace common_air {
         air.H0 = vector<double>(air.N_SP);
         air.S0 = vector<double>(air.N_SP);
         air.mu0 = vector<double>(air.N_SP);
-        air.Cp0 = vector<double>(air.N_SP);
         air.hf = vector<double>(air.N_SP);
         air.Y = vector<double>(air.N_SP);
         air.X = vector<double>(air.N_SP);
@@ -298,4 +296,18 @@ namespace common_air {
         cout << endl << "-- 11 species air mix created. Contains: N2, O2, NO, N, O, Ar, Ar+, N+, O+, NO+, e-" << endl;
         return air;
     }
+
+    mix make_perfG() {
+        mix air;
+        
+        air.gamma = 1.4;
+        air.R = 287.0;
+        air.cv = air.R/(air.gamma - 1.0);
+        air.cp = air.gamma * air.cv;
+        air.Pr = 0.72;
+
+        cout << endl << "-- Perfect gas equation of state being used. Thermodynamic properties are constant." << endl;
+        return air;
+    }
+
 }

@@ -8,77 +8,6 @@ equilibrium::equilibrium(string gas_type) {
     NCOEF = 9;
 }
 
-inline void equilibrium::findTRange() {
-    if      (gas.T >= 200.0   && gas.T <= 1000.0)   T_flag = 0; 
-    else if (gas.T >  1000.0  && gas.T <= 6000.0)   T_flag = 1; 
-    else if (gas.T >  6000.0  && gas.T <= 20000.0)  T_flag = 2;
-    else T_flag = -1;
-}
-
-inline array<double, 7> equilibrium::temp_base(double T) {
-
-    array<double, 7> Ts;
-    double T_inverse = 1/T;
-
-    Ts[0] = T_inverse * T_inverse;  // 1 / T^2
-    Ts[1] = T_inverse;  // 1 / T
-    Ts[2] = log(T);     // ln(T)
-    Ts[3] = T;          // T
-    Ts[4] = Ts[3] * T;  // T^2
-    Ts[5] = Ts[4] * T;  // T^3
-    Ts[6] = Ts[5] * T;  // T^4
-    
-    return Ts;
-}
-
-void equilibrium::NASA_fits() {
-
-    // H(T) / RT = -a0 * T^(-2) + a1 * ln(T)/T + a2 + a3 * T/2 + a4 * T^2 / 3 + a5 * T^3/4 + a6 * T^4 / 5 + a7 / T
-    // S(T) / R = -a0 * T^(-2)/2 - a1 / T + a2 * ln(T) + a3 * T + a4 * T^2 / 2 + a5 * T^3/3 + a6 * T^4 / 4 + a8
-
-    findTRange();                           // Find the temperature range to use for NASA Polynomials
-    const auto Ts = temp_base(gas.T);       // Calculate Temperature variables.
-
-    for (int j = 0; j < gas.N_SP; ++j) {
-
-        const auto& poly = gas.species[j].poly;
-        const double* coeff = poly.data() + T_flag * NCOEF;
-
-        gas.H0[j] = gcon * gas.T * (
-                   - coeff[0] * Ts[0] 
-                   + coeff[1] * Ts[1] * Ts[2] 
-                   + coeff[2] 
-                   + 0.5 * coeff[3] * Ts[3] 
-                   + 0.333 * coeff[4] * Ts[4] 
-                   + 0.25 * coeff[5] * Ts[5] 
-                   + 0.2 * coeff[6] * Ts[6] 
-                   + coeff[7] * Ts[1]);
-
-        gas.S0[j] = gcon * (
-                   - 0.5 * coeff[0] * Ts[0] 
-                   - coeff[1] * Ts[1]
-                   + coeff[2] * Ts[2]
-                   + coeff[3] * Ts[3] 
-                   + 0.5 * coeff[4] * Ts[4] 
-                   + 0.333 * coeff[5] * Ts[5] 
-                   + 0.25 * coeff[6] * Ts[6] 
-                   + coeff[8]);
-
-        gas.Cp0[j] = gcon * (
-                       coeff[0] * Ts[0] 
-                     + coeff[1] * Ts[1] 
-                     + coeff[2] 
-                     + coeff[3] * Ts[3] 
-                     + coeff[4] * Ts[4] 
-                     + coeff[5] * Ts[5] 
-                     + coeff[6] * Ts[6] );
-
-        gas.mu0[j] = gas.H0[j] - gas.T * gas.S0[j];        
-    }
-
-    compute_formation_enthalpies();
-}
-
 void equilibrium::compute_equilibrium(double rho, double e) {
     
     double e_new = 0, cv_new = 0;     
@@ -121,7 +50,7 @@ void equilibrium::compute_equilibrium(double rho, double e) {
         }
         
         cv_new = e_new / gas.T;
-        gas.T = gas.T - 0.6 * (e_new - e) / cv_new;
+        gas.T = gas.T - 0.5 * (e_new - e) / cv_new;
 
         gas.MW = 0.0;
         for (int i = 0; i < gas.N_SP; ++i) {    
@@ -131,13 +60,90 @@ void equilibrium::compute_equilibrium(double rho, double e) {
         gas.R = gcon * 1000.0 / gas.MW;
         gas.p = gas.rho * gas.R * gas.T;
         gas.cv = cv_new;
-        iteration++;
-        
+        iteration++;        
     }
 
     gas.cp = gas.R + gas.cv;
     gas.gamma = gas.cp / gas.cv;
     cout << "-- Outer iterations: " << iteration << endl;
+}
+
+inline void equilibrium::findTRange() {
+    if      (gas.T >= 200.0   && gas.T <= 1000.0)   T_flag = 0; 
+    else if (gas.T >  1000.0  && gas.T <= 6000.0)   T_flag = 1; 
+    else if (gas.T >  6000.0  && gas.T <= 20000.0)  T_flag = 2;
+    else T_flag = -1;
+}
+
+inline array<double, 7> equilibrium::temp_base(double T) {
+
+    array<double, 7> Ts;
+    double T_inverse = 1/T;
+
+    Ts[0] = T_inverse * T_inverse;  // 1 / T^2
+    Ts[1] = T_inverse;  // 1 / T
+    Ts[2] = log(T);     // ln(T)
+    Ts[3] = T;          // T
+    Ts[4] = Ts[3] * T;  // T^2
+    Ts[5] = Ts[4] * T;  // T^3
+    Ts[6] = Ts[5] * T;  // T^4
+    
+    return Ts;
+}
+
+void equilibrium::NASA_fits() {
+
+    // H(T) / RT = -a0 * T^(-2) + a1 * ln(T)/T + a2 + a3 * T/2 + a4 * T^2 / 3 + a5 * T^3/4 + a6 * T^4 / 5 + a7 / T
+    // S(T) / R = -a0 * T^(-2)/2 - a1 / T + a2 * ln(T) + a3 * T + a4 * T^2 / 2 + a5 * T^3/3 + a6 * T^4 / 4 + a8
+
+    findTRange();                           // Find the temperature range to use for NASA Polynomials
+    const auto Ts = temp_base(gas.T);       // Calculate Temperature variables.
+
+    for (int j = 0; j < gas.N_SP; ++j) {
+
+        const auto& poly = gas.species[j].poly;
+        const double* coeff = &poly.at(T_flag * NCOEF);
+
+        gas.H0[j] = gcon * gas.T * (
+                   - coeff[0] * Ts[0] 
+                   + coeff[1] * Ts[1] * Ts[2] 
+                   + coeff[2] 
+                   + 0.5 * coeff[3] * Ts[3] 
+                   + 0.333 * coeff[4] * Ts[4] 
+                   + 0.25 * coeff[5] * Ts[5] 
+                   + 0.2 * coeff[6] * Ts[6] 
+                   + coeff[7] * Ts[1]);
+
+        gas.S0[j] = gcon * (
+                   - 0.5 * coeff[0] * Ts[0] 
+                   - coeff[1] * Ts[1]
+                   + coeff[2] * Ts[2]
+                   + coeff[3] * Ts[3] 
+                   + 0.5 * coeff[4] * Ts[4] 
+                   + 0.333 * coeff[5] * Ts[5] 
+                   + 0.25 * coeff[6] * Ts[6] 
+                   + coeff[8]);
+
+        gas.mu0[j] = gas.H0[j] - gas.T * gas.S0[j];        
+    }
+
+    compute_formation_enthalpies();
+}
+
+void equilibrium::compute_formation_enthalpies() {
+    
+    gas.hf[0] = 0.0;    // N2
+    gas.hf[1] = 0.0;    // O2
+    gas.hf[2] = (gas.H0[2] - 0.5 * gas.H0[0] - 0.5 * gas.H0[1]) * 1000 / gas.species[2].mw;  // NO
+    gas.hf[3] = (gas.H0[3] - 0.5 * gas.H0[0]) * 1000 / gas.species[3].mw;    // N
+    gas.hf[4] = (gas.H0[4] - 0.5 * gas.H0[1]) * 1000 / gas.species[4].mw;    // O
+    gas.hf[5] = 0.0;    // Ar
+    gas.hf[6] = (gas.H0[6] - gas.H0[5]) * 1000 / gas.species[6].mw;  // Ar+
+    gas.hf[7] = (gas.H0[7] - 0.5 * gas.H0[0]) * 1000 / gas.species[7].mw;    // N+
+    gas.hf[8] = (gas.H0[8] - 0.5 * gas.H0[1]) * 1000 / gas.species[8].mw;    // O+
+    gas.hf[9] = (gas.H0[9] - 0.5 * gas.H0[0] - 0.5 * gas.H0[1]) * 1000 / gas.species[9].mw;   // NO+
+    gas.hf[10] = 0.0;
+
 }
 
 void equilibrium::compute_molar_fractions() {
@@ -240,22 +246,6 @@ void equilibrium::compute_mass_fractions() {
         }
 }
 
-void equilibrium::compute_formation_enthalpies() {
-    
-    gas.hf[0] = 0.0;    // N2
-    gas.hf[1] = 0.0;    // O2
-    gas.hf[2] = (gas.H0[2] - 0.5 * gas.H0[0] - 0.5 * gas.H0[1]) * 1000 / gas.species[2].mw;  // NO
-    gas.hf[3] = (gas.H0[3] - 0.5 * gas.H0[0]) * 1000 / gas.species[3].mw;    // N
-    gas.hf[4] = (gas.H0[4] - 0.5 * gas.H0[1]) * 1000 / gas.species[4].mw;    // O
-    gas.hf[5] = 0.0;    // Ar
-    gas.hf[6] = (gas.H0[6] - gas.H0[5]) * 1000 / gas.species[6].mw;  // Ar+
-    gas.hf[7] = (gas.H0[7] - 0.5 * gas.H0[0]) * 1000 / gas.species[7].mw;    // N+
-    gas.hf[8] = (gas.H0[8] - 0.5 * gas.H0[1]) * 1000 / gas.species[8].mw;    // O+
-    gas.hf[9] = (gas.H0[9] - 0.5 * gas.H0[0] - 0.5 * gas.H0[1]) * 1000 / gas.species[9].mw;   // NO+
-    gas.hf[10] = 0.0;
-
-}
-
 void equilibrium::display_gas_properties() {
     cout << endl << setw(30) << "Mixture Temperature: " << gas.T << " [K]" << endl;
     cout << setw(30) << "Mixture Pressure: " << gas.p / 1000.0 << " [kPa]" << endl;
@@ -282,3 +272,61 @@ void equilibrium::display_gas_properties() {
 
 
 }
+
+void equilibrium::plot_concentrations_for_T_range() {
+    
+    double rho = 0.1, e;
+    double T_eq = 1300;
+
+    ofstream mass("mass_fractions.csv");
+    ofstream molar("molar_fractions.csv");
+
+    mass << "T, N2, O2, NO, N, O, Ar, Ar+, N+, O+, NO+, e-" << endl;
+    molar << "T, N2, O2, NO, N, O, Ar, Ar+, N+, O+, NO+, e-" << endl;
+
+    int counter = 0;
+    while (T_eq < 20000) {
+            e = 717 * T_eq + 20000 * counter;
+            compute_equilibrium(rho, e);
+
+            mass << gas.T; // Temperature
+            molar << gas.T; // Temperature
+            for (int i = 0; i < gas.N_SP; ++i) mass << ", " << gas.Y[i];  // Mass fractions 
+            for (int i = 0; i < gas.N_SP; ++i) molar << ", " << gas.X[i];  // Molar fractions 
+            mass << "\n";
+            molar << "\n";
+
+            counter++; 
+            T_eq = gas.T;
+            if (counter % 100 == 0) cout << T_eq << endl;
+    }
+
+    mass.close();
+    molar.close();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

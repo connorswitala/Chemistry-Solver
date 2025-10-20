@@ -10,6 +10,7 @@
 #include<cassert>
 #include<iomanip>
 #include<chrono>
+#include<fstream>
 
 constexpr double gcon = 8.314462;       // Universal gas constant: Joules / mol-Kelvin
 constexpr double bcon = 1.380649e-23;   // Boltzmann constant: Joules / Kelvin

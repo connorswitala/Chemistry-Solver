@@ -1,5 +1,5 @@
 
-#include "solverLib/equilibrium.h"
+#include "equilibrium/equilibrium.h"
 #include<chrono>
 
 using namespace std;
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
     myeq.display_gas_properties();
 
-    cout << endl << "-- Time elaped: " << fixed << setprecision(4) << duration << " s." << endl << endl;
+    cout << endl << endl << "-- Time elaped: " << fixed << setprecision(4) << duration << " s." << endl << endl;
 
     return 0;
 }
