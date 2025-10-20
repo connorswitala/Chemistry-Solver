@@ -1,0 +1,76 @@
+
+-- 5 species air mix created. Contains: N2, O2, NO, N, O
+Residual: 9.41228e+09
+Residual: 5.94969e+09
+Residual: 2.18877e+09
+Residual: 8.05204e+08
+Residual: 2.96218e+08
+Residual: 1.08972e+08
+Residual: 4.00887e+07
+Residual: 1.47478e+07
+Residual: 5.42542e+06
+Residual: 1.9959e+06
+Residual: 734251
+Residual: 270116
+Residual: 99370
+Residual: 36556.2
+Residual: 13448.3
+Residual: 4947.34
+Residual: 1820.03
+Residual: 669.55
+Residual: 246.313
+Residual: 90.6131
+Residual: 33.3334
+Residual: 12.2591
+Residual: 4.5003
+Residual: 1.6314
+Residual: 0.547529
+Residual: 0.128063
+Residual: 0.00979158
+Residual: 6.11333e-05
+Residual: 2.39318e-09
+1
+Residual: 1.07475e-06
+Residual: 7.94912e-08
+Residual: 8.27847e-15
+2
+Residual: 4.0542e-07
+Residual: 1.40754e-08
+Residual: 4.34488e-15
+3
+Residual: 1.69272e-07
+Residual: 2.71265e-09
+4
+Residual: 7.40956e-08
+Residual: 5.44138e-10
+5
+Residual: 3.31465e-08
+Residual: 1.11193e-10
+6
+Residual: 1.49762e-08
+Residual: 2.29198e-11
+7
+Residual: 6.79729e-09
+8
+-- Outer iterations: 8
+
+         Mixture Temperature: 806.842 [K]
+            Mixture Pressure: 23.2232 [kPa]
+             Mixture Density: 0.1 [kg/m^3]
+     Mixture Internal Energy: 600 [kJ/kg]
+        Mixture Gas Constant: 287.829 [J/kg-K]
+                  Mixture cp: 1031.53 [J/kg-K]
+                  Mixture cv: 743.7 [J/kg-K]
+               Mixture gamma: 1.38702
+                  Mixture MW: 28.8868 [g/mol]
+
+                               ====: Species Molar Fractions :==== 
+        N2: 0.7808	        O2: 0.2192	        NO: 0.0000	         N: 0.0000	
+         O: 0.0000	
+
+                                ====: Species Mass Fractions :==== 
+        N2: 0.7572	        O2: 0.2428	        NO: 0.0000	         N: 0.0000	
+         O: 0.0000	
+
+-- Time elaped: 0.0040 s.
+

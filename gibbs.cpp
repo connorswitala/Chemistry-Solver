@@ -6,17 +6,15 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 
-    if (argc < 3) {
-        cerr << "Usage: " << argv[0] << " <rho> <e>\n";
+    if (argc < 4) {
+        cerr << "Usage: " << argv[0] << " <rho> <e> <gas_type>\n";
         return 1;
     }
 
     // convert command-line args to doubles
     double rho = atof(argv[1]);
     double e   = atof(argv[2]);
-
-    string mix_type;
-    mix_type = "air11";    
+    string mix_type = argv[3];   
 
     auto start = NOW;
 

@@ -3,9 +3,22 @@
 
 equilibrium::equilibrium(string gas_type) {
 
-    if (gas_type == "air11") gas = common_air::make_air11();
-    if (gas_type == "air5") gas = common_air::make_air5(); 
+    if (gas_type == "air11") {
+        gas = common_air::make_air11();
+        compute_hf = &equilibrium::compute_formation_enthalpies_ions;
+        form_system = &equilibrium::form_system_ions;
+    }
+    if (gas_type == "air5") {
+        gas = common_air::make_air5(); 
+        compute_hf = &equilibrium::compute_formation_enthalpies_neut;
+        form_system  = &equilibrium::form_system_neut;
+    }
+
     NCOEF = 9;
+    NION = gas.N_ION;
+    NSP = gas.N_SP;
+    NEL = gas.N_EL;
+
 }
 
 void equilibrium::compute_equilibrium(double rho, double e) {
@@ -24,16 +37,17 @@ void equilibrium::compute_equilibrium(double rho, double e) {
 
     int iteration = 0;
 
-    J_SIZE = gas.N_SP + gas.N_EL + 1;
-
+    J_SIZE = NSP + NEL + 1;    
     X = vector<double>(J_SIZE);
+
     findTRange();
-    for (int i = 0; i < gas.N_SP; ++i) {
-        X[i] = gas.guesses[T_flag * gas.N_SP + i];
-    }   
-    
-    // double avg_x = gas.initial_moles / gas.N_SP;
-    // for (int i = 0; i < gas.N_SP; ++i) X[i] = avg_x;
+
+    // for (int i = 0; i < NSP; ++i) {
+    //     X[i] = gas.guesses[T_flag * NSP + i];
+    // }   
+    X[J_SIZE - 1] = gas.initial_moles;
+    double avg_x = gas.initial_moles / NSP;
+    for (int i = 0; i < NSP; ++i) X[i] = avg_x;
 
     while (fabs(e_new - e) >= 100) {
 
@@ -53,19 +67,18 @@ void equilibrium::compute_equilibrium(double rho, double e) {
         gas.T = gas.T - 0.5 * (e_new - e) / cv_new;
 
         gas.MW = 0.0;
-        for (int i = 0; i < gas.N_SP; ++i) {    
+        for (int i = 0; i < NSP; ++i) {    
             gas.MW += gas.X[i] * gas.species[i].mw;
         }
         
         gas.R = gcon * 1000.0 / gas.MW;
         gas.p = gas.rho * gas.R * gas.T;
         gas.cv = cv_new;
-        iteration++;        
+        iteration++;   
     }
 
     gas.cp = gas.R + gas.cv;
     gas.gamma = gas.cp / gas.cv;
-    cout << "-- Outer iterations: " << iteration << endl;
 }
 
 inline void equilibrium::findTRange() {
@@ -99,7 +112,7 @@ void equilibrium::NASA_fits() {
     findTRange();                           // Find the temperature range to use for NASA Polynomials
     const auto Ts = temp_base(gas.T);       // Calculate Temperature variables.
 
-    for (int j = 0; j < gas.N_SP; ++j) {
+    for (int j = 0; j < NSP; ++j) {
 
         const auto& poly = gas.species[j].poly;
         const double* coeff = &poly.at(T_flag * NCOEF);
@@ -127,10 +140,10 @@ void equilibrium::NASA_fits() {
         gas.mu0[j] = gas.H0[j] - gas.T * gas.S0[j];        
     }
 
-    compute_formation_enthalpies();
+    (this->*compute_hf)();
 }
 
-void equilibrium::compute_formation_enthalpies() {
+void equilibrium::compute_formation_enthalpies_ions() {
     
     gas.hf[0] = 0.0;    // N2
     gas.hf[1] = 0.0;    // O2
@@ -146,102 +159,64 @@ void equilibrium::compute_formation_enthalpies() {
 
 }
 
+void equilibrium::compute_formation_enthalpies_neut() {
+    
+    gas.hf[0] = 0.0;    // N2
+    gas.hf[1] = 0.0;    // O2
+    gas.hf[2] = (gas.H0[2] - 0.5 * gas.H0[0] - 0.5 * gas.H0[1]) * 1000 / gas.species[2].mw;  // NO
+    gas.hf[3] = (gas.H0[3] - 0.5 * gas.H0[0]) * 1000 / gas.species[3].mw;    // N
+    gas.hf[4] = (gas.H0[4] - 0.5 * gas.H0[1]) * 1000 / gas.species[4].mw;    // O
+
+}
+
 void equilibrium::compute_molar_fractions() {
+
     vector<double> X_new(J_SIZE, 0.0), dx(J_SIZE, 0.0), F(J_SIZE, 0.0), J(J_SIZE * J_SIZE, 0.0); 
 
-    int nsp = gas.N_SP;
-    int nel = gas.N_EL;
-    int nion = gas.N_ION;
+    int iteration = 0;    
+    double residual = norm(X_new.data(), X.data(), NSP);
 
-    int iteration = 0;
-    
-    double residual = norm(X_new.data(), X.data());
+    while (residual > 1e-8) {
 
-    while (residual > 1e-6) {
-
-        for (int i = nsp; i < J_SIZE; ++i) {
-            X[i] = 0.0;
-        }
-
-        for (int i = 0; i < nsp; ++i) {
-
-            J[i * J_SIZE + i] = 1.0;  // Identity part
-
-            for (int k = 0; k < nel; ++k) {
-                    J[i * J_SIZE + nsp + k] = -gas.a[k * nsp + i];  // -a[k][i] 
-            }
-
-            J[i * J_SIZE + J_SIZE - 1] = -gas.species[i].q; 
-
-        }       
-
-        // Row 10–12: nitrogen, oxygen, argon atomic balance
-        for (int k = 0; k < nel; ++k) {
-                for (int j = 0; j < nsp; ++j) {
-                        J[(nsp + k) * J_SIZE + j] = gas.a[k * nsp + j] * X[j];  // a[k][j] * X[j]
-                }
-        // last 4 entries (cols 10–13) remain 0
-        }
-
-        // Row 13: charge neutrality
-        for (int j = 0; j < nsp; ++j) {
-                J[(J_SIZE - 1) * J_SIZE + j] = gas.species[j].q * X[j];
-        }
-        // last 4 entries of row 13 are 0
-
-        for (int i = 0; i < nsp; ++i) {
-                double Xi_safe = max(X[i], 1e-10); // Protect log from zero  
-                F[i] = -(gas.mu0[i] + gcon * gas.T * log(Xi_safe * gas.p / 101325.0)) / (gcon * gas.T);
-        }
-
-        for (int i = 0; i < nel; ++i) {
-            double sum = 0.0;
-            for (int j = 0; j < nsp; ++j) sum += gas.a[i * nsp + j] * X[j];
-            F[nsp + i] = gas.b[i] - sum;
-        }
-
-        double sum = 0.0;
-        for (int i = nsp - nion; i < nsp; ++i) sum += X[i] * gas.species[i].q;
-        F[J_SIZE - 1] = -sum;
-        
+        fill(J.begin(), J.end(), 0.0);
+        (this->*form_system)(J.data(), F.data());        
         matrix_divide(J.data(), F.data(), dx.data(), J_SIZE, 1);
 
         for (int i = 0; i < J_SIZE; ++i) {
-                X_new[i] = X[i] * exp(dx[i]);
+            X_new[i] = X[i] * exp(dx[i]);
 
-                if (isnan(X_new[i]) || isinf(X_new[i])) {
-                        cout << "Nonphysical molar fraction computed (NaN or Inf)" << endl;
-                }
+            if (isnan(X_new[i]) || isinf(X_new[i])) {
+                    cout << "Nonphysical molar fraction computed (NaN or Inf)" << endl;
+            }
 
-                if (X_new[i] < 0) {
-                        cout << "Negative molar fraction computed" << endl;
-                }
+            if (X_new[i] < 0) {
+                    cout << "Negative molar fraction computed" << endl;
+            }
         }
 
-        residual = norm(X_new.data(), X.data());
+        residual = norm(X_new.data(), X.data(), NSP);
         X = X_new;
         iteration++;
     }
 
     double sum = 0.0;
-    for (int i = 0; i < nsp; ++i) sum += X[i];
+    for (int i = 0; i < NSP; ++i) sum += X[i];
 
-    for (int i = 0; i < nsp; ++i) {
+    for (int i = 0; i < NSP; ++i) {
             gas.X[i] = X_new[i]/sum;
     }
 
     compute_mass_fractions();
-
 }
 
 void equilibrium::compute_mass_fractions() {
 
         gas.MW = 0.0;
-        for (int i = 0; i < gas.N_SP; ++i) {
+        for (int i = 0; i < NSP; ++i) {
                 gas.MW += gas.X[i] * gas.species[i].mw;
         }
 
-        for (int i = 0; i < gas.N_SP; ++i) {
+        for (int i = 0; i < NSP; ++i) {
                 gas.Y[i] = (gas.X[i] * gas.species[i].mw) / gas.MW;
         }
 }
@@ -259,13 +234,13 @@ void equilibrium::display_gas_properties() {
 
 
     cout << endl << setw(67) << "====: Species Molar Fractions :==== " << endl;
-    for (int i = 0; i < gas.N_SP; ++i) {
+    for (int i = 0; i < NSP; ++i) {
         cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.X[i] << "\t";
         if ((i + 1) % 4 == 0) cout << endl;
     }
 
     cout << endl << endl << setw(67) <<  "====: Species Mass Fractions :==== " << endl;
-    for (int i = 0; i < gas.N_SP; ++i) {
+    for (int i = 0; i < NSP; ++i) {
         cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
         if ((i + 1) % 4 == 0) cout << endl;
     }
@@ -291,8 +266,8 @@ void equilibrium::plot_concentrations_for_T_range() {
 
             mass << gas.T; // Temperature
             molar << gas.T; // Temperature
-            for (int i = 0; i < gas.N_SP; ++i) mass << ", " << gas.Y[i];  // Mass fractions 
-            for (int i = 0; i < gas.N_SP; ++i) molar << ", " << gas.X[i];  // Molar fractions 
+            for (int i = 0; i < NSP; ++i) mass << ", " << gas.Y[i];  // Mass fractions 
+            for (int i = 0; i < NSP; ++i) molar << ", " << gas.X[i];  // Molar fractions 
             mass << "\n";
             molar << "\n";
 
@@ -305,8 +280,99 @@ void equilibrium::plot_concentrations_for_T_range() {
     molar.close();
 }
 
+void equilibrium::form_system_ions(double* J, double* F) {
 
+        for (int i = NSP; i < J_SIZE; ++i) {
+            X[i] = 0.0;
+        } 
 
+        for (int i = 0; i < NSP; ++i) {
+
+            J[i * J_SIZE + i] = 1.0;  // Identity part
+
+            for (int k = 0; k < NEL; ++k) {
+                J[i * J_SIZE + NSP + k] = -gas.a[k * NSP + i];  // -a[k][i] 
+            }
+
+            J[i * J_SIZE + J_SIZE - 1] = -gas.species[i].q; 
+
+        }       
+
+        // Row 10–12: nitrogen, oxygen, argon atomic balance
+        for (int k = 0; k < NEL; ++k) {
+            for (int j = 0; j < NSP; ++j) {
+                J[(NSP + k) * J_SIZE + j] = gas.a[k * NSP + j] * X[j];  // a[k][j] * X[j]
+            }
+        // last 4 entries (cols 10–13) remain 0
+        }
+
+        // Row 13: charge neutrality
+        for (int j = 0; j < NSP; ++j) {
+            J[(J_SIZE - 1) * J_SIZE + j] = gas.species[j].q * X[j];
+        }
+        // last 4 entries of row 13 are 0
+
+        for (int i = 0; i < NSP; ++i) {
+            double Xi_safe = max(X[i], 1e-10); // Protect log from zero  
+            F[i] = -(gas.mu0[i] + gcon * gas.T * log(Xi_safe * gas.p / 101325.0)) / (gcon * gas.T);
+        }
+
+        for (int i = 0; i < NEL; ++i) {
+            double sum = 0.0;
+            for (int j = 0; j < NSP; ++j) sum += gas.a[i * NSP + j] * X[j];
+            F[NSP + i] = gas.b[i] - sum;
+        }
+
+        double sum = 0.0;
+        for (int i = NSP - NION; i < NSP; ++i) sum += X[i] * gas.species[i].q;
+        F[J_SIZE - 1] = -sum;
+}
+
+void equilibrium::form_system_neut(double* J, double* F) {
+
+        for (int i = NSP; i < J_SIZE - 1; ++i) {
+            X[i] = 0.0;
+        } 
+
+        for (int i = 0; i < NSP; ++i) {
+
+            J[i * J_SIZE + i] = 1.0;  // Identity part
+
+            for (int k = 0; k < NEL; ++k) {
+                J[i * J_SIZE + NSP + k] = -gas.a[k * NSP + i];  // -a[k][i] 
+            }
+
+            J[i * J_SIZE + J_SIZE - 1] = -1.0;
+        }       
+
+        for (int k = 0; k < NEL; ++k) {
+            for (int j = 0; j < NSP; ++j) {
+                J[(NSP + k) * J_SIZE + j] = gas.a[k * NSP + j] * X[j];  // a[k][j] * X[j]   
+            }
+        // last 4 entries (cols 10–13) remain 0
+        }
+
+        for (int j = 0; j < NSP; ++j) {
+            J[(J_SIZE - 1) * J_SIZE + j] = X[j];
+        }
+
+        J[J_SIZE * J_SIZE - 1] = -X[J_SIZE - 1];
+
+        for (int i = 0; i < NSP; ++i) {
+            double Xi_safe = max(X[i], 1e-10); // Protect log from zero
+            F[i] = -(gas.mu0[i] + gcon * gas.T * log(Xi_safe * gas.p / 101325.0)) / (gcon * gas.T);
+        }
+
+        for (int i = 0; i < NEL; ++i) {
+            double sum = 0.0;
+            for (int j = 0; j < NSP; ++j) sum += gas.a[i * NSP + j] * X[j];
+            F[NSP + i] = gas.b[i] - sum;
+        }
+
+        double sum = 0.0;
+        for (int i = 0; i < NSP; ++i) sum += X[i];
+        F[J_SIZE - 1] = gas.initial_moles - sum;
+}
 
 
 

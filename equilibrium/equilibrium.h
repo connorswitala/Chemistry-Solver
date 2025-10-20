@@ -28,6 +28,8 @@ class equilibrium {
 
     int NCOEF;  // Number of NASA polynomial coefficients (Always 9).
 
+    int NSP, NEL, NION;
+
     Vector X;   // Old solution vector of molar concentrations..
 
 
@@ -41,7 +43,17 @@ class equilibrium {
 
     void compute_mass_fractions();                  // Converts molar fractions to mass fractions.
 
-    void compute_formation_enthalpies();            // Computes formation enthalpies.
+    void compute_formation_enthalpies_ions();            // Computes formation enthalpies.
+    void compute_formation_enthalpies_neut();            // Computes formation enthalpies.
+
+    void form_system_ions(double* J, double* F);
+    void form_system_neut(double* J, double* F);
+
+    using hfptr = void (equilibrium::*)();
+    using systemptr = void (equilibrium::*)(double*, double*);
+
+    systemptr form_system = nullptr;
+    hfptr compute_hf = nullptr;
 
 };
 
