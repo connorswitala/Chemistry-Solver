@@ -16,10 +16,9 @@ namespace common_air {
             8.310139160e+08, -6.420733540e+05, 2.020264635e+02, -3.065092046e-02, 2.486903333e-06,
             -9.705954110e-11, 1.437538881e-15, 4.938707040e+06, -1.672099740e+03
         },
-        3521.0,
+        3395.0,
         0,
-        gcon / N2.mw * 1000.0,
-        0.0
+        gcon / N2.mw * 1000.0
     };
 
     SpeciesInfo O2 {
@@ -35,10 +34,9 @@ namespace common_air {
             4.975294300e+08, -2.866106874e+05, 6.690352250e+01, -6.169959020e-03, 3.016396027e-07,
             -7.421416600e-12, 7.278175770e-17, 2.293554027e+06, -5.530621610e+02
         },
-          2256.0,
+          2239.0,
           0,
-          gcon / O2.mw * 1000.0,
-          0.0
+          gcon / O2.mw * 1000.0
     };
 
     SpeciesInfo NO {
@@ -54,10 +52,9 @@ namespace common_air {
             -9.575303540e+08, 5.912434480e+05, -1.384566826e+02, 1.694339403e-02, -1.007351096e-06,
             2.912584076e-11, -3.295109350e-16, -4.677501240e+06, 1.242081216e+03
         },
-           3122.0,
+           2817.0,
            0,
-           gcon / NO.mw * 1000.0,
-           9.1271e4
+           gcon / NO.mw * 1000.0
     };
 
     SpeciesInfo N {
@@ -75,8 +72,7 @@ namespace common_air {
         },
         0.0,
         0,
-        gcon / N.mw * 1000.0,
-        4.7268e5
+        gcon / N.mw * 1000.0
     };
 
     SpeciesInfo O {
@@ -94,8 +90,7 @@ namespace common_air {
         },
         0.0,
         0,
-        gcon / O.mw * 1000.0,
-        2.49175e5
+        gcon / O.mw * 1000.0
     };
 
     SpeciesInfo Ar {
@@ -113,8 +108,7 @@ namespace common_air {
         },
         0.0,
         0,
-        gcon / Ar.mw * 1000.0,
-        0.0
+        gcon / Ar.mw * 1000.0
     };
 
     SpeciesInfo Ar_ion {
@@ -132,8 +126,7 @@ namespace common_air {
         },
         0.0,
         1,
-        gcon / Ar_ion.mw * 1000.0,
-        1.5268e6
+        gcon / Ar_ion.mw * 1000.0
     };
 
     SpeciesInfo N_ion {
@@ -151,8 +144,7 @@ namespace common_air {
         },
         0.0,
         1,
-        gcon / N_ion.mw * 1000.0,
-        1.8821e6
+        gcon / N_ion.mw * 1000.0
     };
 
     SpeciesInfo O_ion {
@@ -170,8 +162,7 @@ namespace common_air {
         },
         0.0,
         1,
-        gcon / O_ion.mw * 1000.0,
-        1.56879e6
+        gcon / O_ion.mw * 1000.0
     };
   
     SpeciesInfo NO_ion {
@@ -187,10 +178,9 @@ namespace common_air {
             2.676400347e+09, -1.832948690e+06, 5.099249390e+02, -7.113819280e-02, 5.317659880e-06,
             -1.963208212e-10, 2.805268230e-15, 1.443308939e+07, -4.324044462e+03
         },
-        3360.0,
+        3421.0,
         1,
-        gcon / NO_ion.mw * 1000.0,
-        9.9081e5
+        gcon / NO_ion.mw * 1000.0
     };
 
     SpeciesInfo e_ion {
@@ -208,9 +198,46 @@ namespace common_air {
         },
         0.0,
         -1,
-        gcon / e_ion.mw * 1000.0,
-        0.0
+        gcon / e_ion.mw * 1000.0
     };
+
+    SpeciesInfo N2_ion{
+        "N2+",
+        28.01545,
+        {
+            -3.474047470e+04, 2.696222703e+02, 3.164916370e+00, -2.132239781e-03, 6.730476400e-06, 
+            -5.637304970e-09, 1.621756000e-12, 1.790004424e+05,  6.832974166e+00,
+
+            -2.845599002e+06, 7.058893030e+03, -2.884886385e+00, 3.068677059e-03, -4.361652310e-07,
+            2.102514545e-11, 5.411996470e-16, 1.340388483e+05, 5.090897022e+01,
+
+            -3.712829770e+08, 3.139287234e+05, -9.603518050e+01, 1.571193286e-02, -1.175065525e-06, 
+            4.144441230e-11, -5.621893090e-16, -2.217361867e+06, 8.436270947e+02
+        },
+        3175.8,
+        1, 
+        gcon / N2_ion.mw * 1000.0
+    };
+
+    SpeciesInfo O2_ion{
+        "O2+",
+        31.99945,
+        {
+            -8.607205450e+04, 1.051875934e+03, -5.432380470e-01, 6.571166540e-03, -3.274263750e-06,
+            5.940645340e-11, 3.238784790e-13, 1.345544668e+05, 2.902709750e+01,
+
+            7.384654880e+04, -8.459559540e+02, 4.985164160e+00, -1.611010890e-04, 6.427083990e-08,
+            -1.504939874e-11, 1.578465409e-15, 1.446321044e+05, -5.811230650e+00,
+
+            -1.562125524e+09, 1.161406778e+06, -3.302504720e+02, 4.710937520e-02, -3.354461380e-06,
+            1.167968599e-10, -1.589754791e-15, -8.857866270e+06, 2.852035602e+03
+        },
+        2741.2,
+        1,
+        gcon / O2_ion.mw * 1000.0
+    };
+
+
 
     mix make_air5() {
         mix air;
@@ -248,11 +275,13 @@ namespace common_air {
 
         air.initial_moles = 1.0;
 
-        cout << endl << "-- 5 species air mix created. Contains: N2, O2, NO, N, O" << endl;
+        cout << endl << "-- " << air.N_SP << " species air mix created. Contains: ";
+        for (int i = 0; i < air.N_SP; ++i) cout << air.species[i].name << ", ";
+        cout << endl;
         return air;
     }
 
-    mix make_air11() {
+    mix make_air11_Ar() {
         mix air;
         air.species = {N2, O2, NO, N, O, Ar, Ar_ion, N_ion, O_ion, NO_ion, e_ion};
         air.N_SP = 11;
@@ -267,10 +296,6 @@ namespace common_air {
         air.X = vector<double>(air.N_SP);
         air.mono_list = {3, 4, 5, 6, 7, 8, 10};
         air.diatomic_list = {0, 1, 2, 9};
-        air.guesses = {0.7808, 0.2095, 0.0, 0.0, 0.0, 0.0097, 0.0, 0.0, 0.0, 0.0, 0.0,
-                0.6340, 0.0059, 0.0282, 0.0125, 0.31125, 0.0081, 0.00001, 0.00001, 0.00001, 0.00001, 0.00001,                         
-                0.00079, 0.00001, 0.0001, 0.6160, 0.1748, 0.0036, 0.0008, 0.0873, 0.0141, 0.0001, 0.1024};
-
 
         air.gamma = 1.4;
         air.R = 287.0;
@@ -293,9 +318,97 @@ namespace common_air {
 
         air.initial_moles = 1.0;
 
-        cout << endl << "-- 11 species air mix created. Contains: N2, O2, NO, N, O, Ar, Ar+, N+, O+, NO+, e-" << endl;
+        cout << endl << "-- " << air.N_SP << " species air mix created. Contains: ";
+        for (int i = 0; i < air.N_SP; ++i) cout << air.species[i].name << ", ";
+        cout << endl;
         return air;
     }
+
+    mix make_air11() {
+        mix air;
+        air.species = {N2, O2, NO, N, O, N2_ion, O2_ion, N_ion, O_ion, NO_ion, e_ion};
+        air.N_SP = 11;
+        air.N_EL = 2;
+        air.N_ION = 6;
+
+        air.H0 = vector<double>(air.N_SP);
+        air.S0 = vector<double>(air.N_SP);
+        air.mu0 = vector<double>(air.N_SP);
+        air.hf = vector<double>(air.N_SP);
+        air.Y = vector<double>(air.N_SP);
+        air.X = vector<double>(air.N_SP);
+        air.mono_list = {3, 4, 7, 8, 10};
+        air.diatomic_list = {0, 1, 2, 5, 6, 9};
+
+        air.gamma = 1.4;
+        air.R = 287.0;
+        air.cv = air.R/(air.gamma - 1.0);
+        air.cp = air.gamma * air.cv;
+
+        air.X0 = {0.7808, 0.2192, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+        air.a = {2, 0, 1, 1, 0, 2, 0, 1, 0, 1, 0,  // N
+                 0, 2, 1, 0, 1, 0, 2, 0, 1, 1, 0}; // O
+
+
+        air.b = vector<double>(air.N_EL, 0.0);         
+        for (int i = 0; i < air.N_EL; ++i) {
+            for (int j = 0; j < air.N_SP; ++j) {
+                air.b[i] += air.a[i * air.N_SP + j] * air.X0[j];
+            }
+        }
+
+        air.initial_moles = 1.0;
+
+        cout << endl << "-- " << air.N_SP << " species air mix created. Contains: ";
+        for (int i = 0; i < air.N_SP; ++i) cout << air.species[i].name << ", ";
+        cout << endl;
+        return air;
+    }
+
+    mix make_air13() {
+        mix air;
+        air.species = {N2, O2, NO, N, O, Ar, Ar_ion, N2_ion, O2_ion, N_ion, O_ion, NO_ion, e_ion};
+        air.N_SP = 13;
+        air.N_EL = 3;
+        air.N_ION = 7;
+
+        air.H0 = vector<double>(air.N_SP);
+        air.S0 = vector<double>(air.N_SP);
+        air.mu0 = vector<double>(air.N_SP);
+        air.hf = vector<double>(air.N_SP);
+        air.Y = vector<double>(air.N_SP);
+        air.X = vector<double>(air.N_SP);
+        air.mono_list = {3, 4, 5, 6, 9, 10, 12};
+        air.diatomic_list = {0, 1, 2, 7, 8, 11};
+
+        air.gamma = 1.4;
+        air.R = 287.0;
+        air.cv = air.R/(air.gamma - 1.0);
+        air.cp = air.gamma * air.cv;
+
+        air.X0 = { 0.7808, 0.2095, 0.0, 0.0, 0.0, 0.0097, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+        air.a = {2, 0, 1, 1, 0, 0, 0, 2, 0, 1, 0, 1, 0,  // N
+                 0, 2, 1, 0, 1, 0, 0, 0, 2, 0, 1, 1, 0,  // O
+                 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0}; // Ar
+
+
+        air.b = vector<double>(air.N_EL, 0.0);         
+        for (int i = 0; i < air.N_EL; ++i) {
+            for (int j = 0; j < air.N_SP; ++j) {
+                air.b[i] += air.a[i * air.N_SP + j] * air.X0[j];
+            }
+        }
+
+        air.initial_moles = 1.0;
+
+        cout << endl << "-- " << air.N_SP << " species air mix created. Contains: ";
+        for (int i = 0; i < air.N_SP; ++i) cout << air.species[i].name << ", ";
+        cout << endl;
+        return air;
+    }
+
 
     mix make_perfG() {
         mix air;
@@ -309,5 +422,8 @@ namespace common_air {
         cout << endl << "-- Perfect gas equation of state being used. Thermodynamic properties are constant." << endl;
         return air;
     }
+
+
+
 
 }

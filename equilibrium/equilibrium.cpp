@@ -13,6 +13,17 @@ equilibrium::equilibrium(string gas_type) {
         compute_hf = &equilibrium::compute_formation_enthalpies_neut;
         form_system  = &equilibrium::form_system_neut;
     }
+    if (gas_type == "air11_Ar") {
+        gas = common_air::make_air11_Ar();
+        compute_hf = &equilibrium::compute_formation_enthalpies_ions;
+        form_system = &equilibrium::form_system_ions;
+    }
+
+    if (gas_type == "air13") {
+        gas = common_air::make_air13();
+        compute_hf = &equilibrium::compute_formation_enthalpies_ions;
+        form_system = &equilibrium::form_system_ions;
+    }
 
     NCOEF = 9;
     NION = gas.N_ION;
@@ -42,13 +53,9 @@ void equilibrium::compute_equilibrium(double rho, double e) {
 
     findTRange();
 
-    // for (int i = 0; i < NSP; ++i) {
-    //     X[i] = gas.guesses[T_flag * NSP + i];
-    // }   
     X[J_SIZE - 1] = gas.initial_moles;
     double avg_x = gas.initial_moles / NSP;
     for (int i = 0; i < NSP; ++i) X[i] = avg_x;
-
     while (fabs(e_new - e) >= 100) {
 
         NASA_fits();
@@ -56,11 +63,14 @@ void equilibrium::compute_equilibrium(double rho, double e) {
 
         e_new = 0.0;
         for (int i : gas.diatomic_list) {
-            e_new += gas.Y[i] * (2.5 * gas.species[i].R * gas.T + gas.species[i].R * gas.species[i].theta_v / (exp(gas.species[i].theta_v / gas.T) - 1) + gas.hf[i]); //diatomic species
+            e_new += gas.Y[i] * (2.5 * gas.species[i].R * gas.T 
+                     + gas.species[i].R * gas.species[i].theta_v / (exp(gas.species[i].theta_v / gas.T) - 1)    
+                     + gas.hf[i]); //diatomic species
         }
 
         for (int i : gas.mono_list) {
-            e_new += gas.Y[i] * (1.5 * gas.species[i].R * gas.T + gas.hf[i]); // atomic species
+            e_new += gas.Y[i] * (1.5 * gas.species[i].R * gas.T 
+                     + gas.hf[i]); // atomic species
         }
         
         cv_new = e_new / gas.T;
