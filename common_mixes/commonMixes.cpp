@@ -242,9 +242,14 @@ namespace common_air {
     mix make_air5() {
         mix air;
         air.species = {N2, O2, NO, N, O};
+
         air.N_SP = 5;
         air.N_EL = 2;
         air.N_ION = 0;
+        air.N_RE = 2;
+        air.N_PROD = 3;
+
+        air.perf_flag = false;
 
         air.H0 = vector<double>(air.N_SP);
         air.S0 = vector<double>(air.N_SP);
@@ -252,8 +257,15 @@ namespace common_air {
         air.hf = vector<double>(air.N_SP);
         air.Y = vector<double>(air.N_SP);
         air.X = vector<double>(air.N_SP);
+
         air.mono_list = {3, 4};
         air.diatomic_list = {0, 1, 2};
+
+        air.reactant_idx = {0, 1};
+        air.product_idx = {2, 3, 4};
+        air.reactions = {0.5, 0.5,
+                         0.5, 0.0,
+                         0.0, 0.5};
 
 
         air.gamma = 1.4;
@@ -284,9 +296,14 @@ namespace common_air {
     mix make_air11_Ar() {
         mix air;
         air.species = {N2, O2, NO, N, O, Ar, Ar_ion, N_ion, O_ion, NO_ion, e_ion};
+
         air.N_SP = 11;
         air.N_EL = 3;
         air.N_ION = 5;
+        air.N_RE = 3;
+        air.N_PROD =  air.N_SP - air.N_RE - 1;
+        
+        air.perf_flag = false;
 
         air.H0 = vector<double>(air.N_SP);
         air.S0 = vector<double>(air.N_SP);
@@ -294,8 +311,19 @@ namespace common_air {
         air.hf = vector<double>(air.N_SP);
         air.Y = vector<double>(air.N_SP);
         air.X = vector<double>(air.N_SP);
+
         air.mono_list = {3, 4, 5, 6, 7, 8, 10};
         air.diatomic_list = {0, 1, 2, 9};
+
+        air.reactant_idx = {0, 1, 5};   // N2, O2, Ar
+        air.product_idx = {2, 3, 4, 6, 7, 8, 9}; // NO, N, O, Ar+, N+, O+, NO+, e-
+        air.reactions = {0.5, 0.5, 0.0, // NO 
+                         0.5, 0.0, 0.0, // N
+                         0.0, 0.5, 0.0, // O
+                         0.0, 0.0, 1.0, // Ar+    
+                         0.5, 0.0, 0.0, // N+
+                         0.0, 0.5, 0.0, // O+
+                         0.5, 0.5, 0.0};// NO+  
 
         air.gamma = 1.4;
         air.R = 287.0;
@@ -327,9 +355,14 @@ namespace common_air {
     mix make_air11() {
         mix air;
         air.species = {N2, O2, NO, N, O, N2_ion, O2_ion, N_ion, O_ion, NO_ion, e_ion};
+        
         air.N_SP = 11;
         air.N_EL = 2;
         air.N_ION = 6;
+        air.N_RE = 2;
+        air.N_PROD = air.N_SP - air.N_RE - 1;
+
+        air.perf_flag = false;
 
         air.H0 = vector<double>(air.N_SP);
         air.S0 = vector<double>(air.N_SP);
@@ -337,8 +370,20 @@ namespace common_air {
         air.hf = vector<double>(air.N_SP);
         air.Y = vector<double>(air.N_SP);
         air.X = vector<double>(air.N_SP);
+
         air.mono_list = {3, 4, 7, 8, 10};
         air.diatomic_list = {0, 1, 2, 5, 6, 9};
+
+        air.reactant_idx = {0, 1};   // N2, O2
+        air.product_idx = {2, 3, 4, 5, 6, 7, 8, 9}; // NO, N, O, Ar+, N+, O+, NO+, e-
+        air.reactions = {0.5, 0.5, // NO 
+                         0.5, 0.0, // N
+                         0.0, 0.5, // O
+                         1.0, 0.0, // N2+    
+                         0.0, 1.0, // O2+
+                         0.5, 0.0, // N+
+                         0.0, 0.5, // O+
+                         0.5, 0.5};// NO+  
 
         air.gamma = 1.4;
         air.R = 287.0;
@@ -369,9 +414,14 @@ namespace common_air {
     mix make_air13() {
         mix air;
         air.species = {N2, O2, NO, N, O, Ar, Ar_ion, N2_ion, O2_ion, N_ion, O_ion, NO_ion, e_ion};
+
         air.N_SP = 13;
         air.N_EL = 3;
         air.N_ION = 7;
+        air.N_RE = 3;
+        air.N_PROD = air.N_SP - air.N_RE - 1;
+
+        air.perf_flag = false;
 
         air.H0 = vector<double>(air.N_SP);
         air.S0 = vector<double>(air.N_SP);
@@ -379,8 +429,22 @@ namespace common_air {
         air.hf = vector<double>(air.N_SP);
         air.Y = vector<double>(air.N_SP);
         air.X = vector<double>(air.N_SP);
+
         air.mono_list = {3, 4, 5, 6, 9, 10, 12};
         air.diatomic_list = {0, 1, 2, 7, 8, 11};
+
+        
+        air.reactant_idx = {0, 1, 5};   // N2, O2
+        air.product_idx = {2, 3, 4, 6, 7, 8, 9, 10, 11}; // NO, N, O, Ar+, N+, O+, NO+, e-
+        air.reactions = {0.5, 0.5, 0.0, // NO 
+                         0.5, 0.0, 0.0, // N
+                         0.0, 0.5, 0.0, // O
+                         0.0, 0.0, 1.0, // Ar+
+                         1.0, 0.0, 0.0, // N2+    
+                         0.0, 1.0, 0.0, // O2+
+                         0.5, 0.0, 0.0, // N+
+                         0.0, 0.5, 0.0, // O+
+                         0.5, 0.5, 0.0};// NO+  
 
         air.gamma = 1.4;
         air.R = 287.0;
@@ -408,7 +472,6 @@ namespace common_air {
         cout << endl;
         return air;
     }
-
 
     mix make_perf() {
         mix air;

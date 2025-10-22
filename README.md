@@ -12,7 +12,7 @@ The main executable can be run with: ./gibbs [rho] [e] [mix_type].
 - air11 - This uses an 11-species air mixture that contains N2, O2, NO, N, O, N2+, O2+, NO+, N+, O+, and e-.
 - air11_Ar - This uses an 11-species air mixture that contains N2, O2, NO, N, O, Ar, Ar+, NO+, N+, O+, and e-.
 - air13 - This uses a 13-species air mixture that contains N2, O2, NO, N, O, Ar, Ar+, N2+, O2+, NO+, N+, O+, and e-.
-- perf - This just returns perfect gas thermodynamics quantities for air (e.g. R = 287.0, gamma = 1.4, etc.)
+- perf - This just returns perfect gas thermodynamics quantities for air (e.g. R = 287.0, gamma = 1.4, etc.) No minimization procedure is used.
 
 An example of running this code looks like:
 

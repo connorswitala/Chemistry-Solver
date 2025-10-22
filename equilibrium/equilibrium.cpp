@@ -5,23 +5,19 @@ equilibrium::equilibrium(string gas_type) {
 
     if (gas_type == "air11") {
         gas = common_air::make_air11();
-        compute_hf = &equilibrium::compute_formation_enthalpies_ions;
         form_system = &equilibrium::form_system_ions;
     }
     if (gas_type == "air5") {
         gas = common_air::make_air5(); 
-        compute_hf = &equilibrium::compute_formation_enthalpies_neut;
         form_system  = &equilibrium::form_system_neut;
     }
     if (gas_type == "air11_Ar") {
         gas = common_air::make_air11_Ar();
-        compute_hf = &equilibrium::compute_formation_enthalpies_ions;
         form_system = &equilibrium::form_system_ions;
     }
 
     if (gas_type == "air13") {
         gas = common_air::make_air13();
-        compute_hf = &equilibrium::compute_formation_enthalpies_ions;
         form_system = &equilibrium::form_system_ions;
     }
 
@@ -64,8 +60,6 @@ void equilibrium::compute_equilibrium(double rho, double e) {
 
     J_SIZE = NSP + NEL + 1;    
     X = vector<double>(J_SIZE);
-
-    findTRange();
 
     X[J_SIZE - 1] = gas.initial_moles;
     double avg_x = gas.initial_moles / NSP;
@@ -165,33 +159,28 @@ void equilibrium::NASA_fits() {
         gas.mu0[j] = gas.H0[j] - gas.T * gas.S0[j];        
     }
 
-    (this->*compute_hf)();
+    compute_formation_enthalpies();
 }
 
-void equilibrium::compute_formation_enthalpies_ions() {
+void equilibrium::compute_formation_enthalpies() {
     
-    gas.hf[0] = 0.0;    // N2
-    gas.hf[1] = 0.0;    // O2
-    gas.hf[2] = (gas.H0[2] - 0.5 * gas.H0[0] - 0.5 * gas.H0[1]) * 1000 / gas.species[2].mw;  // NO
-    gas.hf[3] = (gas.H0[3] - 0.5 * gas.H0[0]) * 1000 / gas.species[3].mw;    // N
-    gas.hf[4] = (gas.H0[4] - 0.5 * gas.H0[1]) * 1000 / gas.species[4].mw;    // O
-    gas.hf[5] = 0.0;    // Ar
-    gas.hf[6] = (gas.H0[6] - gas.H0[5]) * 1000 / gas.species[6].mw;  // Ar+
-    gas.hf[7] = (gas.H0[7] - 0.5 * gas.H0[0]) * 1000 / gas.species[7].mw;    // N+
-    gas.hf[8] = (gas.H0[8] - 0.5 * gas.H0[1]) * 1000 / gas.species[8].mw;    // O+
-    gas.hf[9] = (gas.H0[9] - 0.5 * gas.H0[0] - 0.5 * gas.H0[1]) * 1000 / gas.species[9].mw;   // NO+
-    gas.hf[10] = 0.0;
-
-}
-
-void equilibrium::compute_formation_enthalpies_neut() {
+    for (int i : gas.reactant_idx) {
+        gas.hf[i] = 0.0;
+    }
     
-    gas.hf[0] = 0.0;    // N2
-    gas.hf[1] = 0.0;    // O2
-    gas.hf[2] = (gas.H0[2] - 0.5 * gas.H0[0] - 0.5 * gas.H0[1]) * 1000 / gas.species[2].mw;  // NO
-    gas.hf[3] = (gas.H0[3] - 0.5 * gas.H0[0]) * 1000 / gas.species[3].mw;    // N
-    gas.hf[4] = (gas.H0[4] - 0.5 * gas.H0[1]) * 1000 / gas.species[4].mw;    // O
+    int k = 0;
+    for (int i : gas.product_idx) {
 
+        double sum = 0.0;
+
+        for (int j = 0; j < gas.N_RE; ++j) {
+            sum += gas.reactions[k * gas.N_RE + j] * gas.H0[gas.reactant_idx[j]];
+        }
+        gas.hf[i] = (gas.H0[i] - sum) * 1000.0 / gas.species[i].mw;
+        k++;
+    }
+
+    gas.hf.back() = 0.0;     
 }
 
 void equilibrium::compute_molar_fractions() {
@@ -272,8 +261,6 @@ void equilibrium::display_gas_properties() {
         cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
         if ((i + 1) % 4 == 0) cout << endl;
     }
-
-
 }
 
 void equilibrium::plot_concentrations_for_T_range() {

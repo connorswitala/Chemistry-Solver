@@ -22,12 +22,15 @@ struct mix {
     double e, rho, T, p;
     Vector Y;
     Vector X, X0;
-    int N_SP, N_EL, N_ION;
+    int N_SP, N_EL, N_ION, N_RE, N_PROD;
     Vector a, b;
     double initial_moles;
     vector<int> diatomic_list;
     vector<int> mono_list;
     bool perf_flag;
+    Vector reactant_idx;
+    Vector product_idx;
+    Vector reactions;
 };
 
 #endif
