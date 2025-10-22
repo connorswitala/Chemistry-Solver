@@ -27,6 +27,7 @@ struct mix {
     double initial_moles;
     vector<int> diatomic_list;
     vector<int> mono_list;
+    bool perf_flag;
 };
 
 #endif

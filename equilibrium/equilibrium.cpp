@@ -25,6 +25,11 @@ equilibrium::equilibrium(string gas_type) {
         form_system = &equilibrium::form_system_ions;
     }
 
+    if (gas_type == "perf") {
+        gas = common_air::make_perf();
+        return;
+    }
+
     NCOEF = 9;
     NION = gas.N_ION;
     NSP = gas.N_SP;
@@ -34,6 +39,15 @@ equilibrium::equilibrium(string gas_type) {
 
 void equilibrium::compute_equilibrium(double rho, double e) {
     
+    if (gas.perf_flag) {
+        gas.T = e / gas.cv;
+        gas.rho = rho;
+        gas.p = rho * gas.R * gas.T;
+        gas.e = e;
+        compute_mass_fractions();
+        return; 
+    }
+
     double e_new = 0, cv_new = 0;     
     gas.rho = rho;
     gas.e = e;
@@ -56,7 +70,7 @@ void equilibrium::compute_equilibrium(double rho, double e) {
     X[J_SIZE - 1] = gas.initial_moles;
     double avg_x = gas.initial_moles / NSP;
     for (int i = 0; i < NSP; ++i) X[i] = avg_x;
-    
+
     while (fabs(e_new - e) >= 100) {
 
         NASA_fits();
@@ -233,6 +247,8 @@ void equilibrium::compute_mass_fractions() {
 }
 
 void equilibrium::display_gas_properties() {
+
+
     cout << endl << setw(30) << "Mixture Temperature: " << gas.T << " [K]" << endl;
     cout << setw(30) << "Mixture Pressure: " << gas.p / 1000.0 << " [kPa]" << endl;
     cout << setw(30) << "Mixture Density: " << gas.rho << " [kg/m^3]" << endl;
@@ -243,6 +259,7 @@ void equilibrium::display_gas_properties() {
     cout << setw(30) << "Mixture gamma: " << gas.gamma << endl;
     cout << setw(30) << "Mixture MW: " << gas.MW << " [g/mol]" << endl;
 
+    if (gas.perf_flag) return;
 
     cout << endl << setw(67) << "====: Species Molar Fractions :==== " << endl;
     for (int i = 0; i < NSP; ++i) {

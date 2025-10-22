@@ -410,14 +410,16 @@ namespace common_air {
     }
 
 
-    mix make_perfG() {
+    mix make_perf() {
         mix air;
         
+        air.perf_flag = true;
         air.gamma = 1.4;
         air.R = 287.0;
         air.cv = air.R/(air.gamma - 1.0);
         air.cp = air.gamma * air.cv;
         air.Pr = 0.72;
+        air.MW = 28.97;
 
         cout << endl << "-- Perfect gas equation of state being used. Thermodynamic properties are constant." << endl;
         return air;
