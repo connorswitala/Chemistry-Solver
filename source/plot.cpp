@@ -1,5 +1,5 @@
 
-#include "equilibrium/equilibrium.h"
+#include "../equilibrium/equilibrium.h"
 #include<chrono>
 
 using namespace std;

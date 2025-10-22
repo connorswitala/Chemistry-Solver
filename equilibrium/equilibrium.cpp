@@ -56,6 +56,7 @@ void equilibrium::compute_equilibrium(double rho, double e) {
     X[J_SIZE - 1] = gas.initial_moles;
     double avg_x = gas.initial_moles / NSP;
     for (int i = 0; i < NSP; ++i) X[i] = avg_x;
+    
     while (fabs(e_new - e) >= 100) {
 
         NASA_fits();
