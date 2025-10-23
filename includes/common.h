@@ -17,7 +17,7 @@ constexpr double bcon = 1.380649e-23;   // Boltzmann constant: Joules / Kelvin
 constexpr double acon  = 6.022140e23;   // Avogradro's constant: 1/mol 
 
 typedef std::vector<double> Vector;
-#define NOW std::chrono::high_resolution_clock::now()
+#define NOW std::chrono::high_resolution_clock::now();
 
 
 #endif

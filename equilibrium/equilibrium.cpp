@@ -100,6 +100,58 @@ void equilibrium::compute_equilibrium(double rho, double e) {
     gas.gamma = gas.cp / gas.cv;
 }
 
+void equilibrium::compute_equilibrium_TP(double T, double P) {
+    
+    if (gas.perf_flag) {
+        gas.T = T;
+        gas.p = P;
+        gas.rho = gas.p / (gas.R * gas.T);
+        gas.e = gas.cv * gas.T;
+        return; 
+    }
+
+    gas.T = T;
+    gas.p = P;
+    gas.rho = gas.p / (gas.R * gas.T);
+    gas.e = T * gas.cv;
+
+    int iteration = 0;
+
+    J_SIZE = NSP + NEL + 1;    
+    X = vector<double>(J_SIZE);
+
+    X[J_SIZE - 1] = gas.initial_moles;
+    double avg_x = gas.initial_moles / NSP;
+    for (int i = 0; i < NSP; ++i) X[i] = avg_x;
+
+    NASA_fits();
+    compute_molar_fractions();
+
+    gas.e = 0.0;
+    for (int i : gas.diatomic_list) {
+        gas.e += gas.Y[i] * (2.5 * gas.species[i].R * gas.T 
+                    + gas.species[i].R * gas.species[i].theta_v / (exp(gas.species[i].theta_v / gas.T) - 1)    
+                    + gas.hf[i]); //diatomic species
+    }
+
+    for (int i : gas.mono_list) {
+        gas.e += gas.Y[i] * (1.5 * gas.species[i].R * gas.T 
+                    + gas.hf[i]); // atomic species
+    }
+    
+    gas.cv = gas.e / gas.T;
+
+    gas.MW = 0.0;
+    for (int i = 0; i < NSP; ++i) {    
+        gas.MW += gas.X[i] * gas.species[i].mw;
+    }
+    
+    gas.R = gcon * 1000.0 / gas.MW;
+    gas.cp = gas.R + gas.cv;
+    gas.gamma = gas.cp / gas.cv;
+}
+
+
 inline void equilibrium::findTRange() {
     if      (gas.T >= 200.0   && gas.T <= 1000.0)   T_flag = 0; 
     else if (gas.T >  1000.0  && gas.T <= 6000.0)   T_flag = 1; 
@@ -136,27 +188,25 @@ void equilibrium::NASA_fits() {
         const auto& poly = gas.species[j].poly;
         const double* coeff = &poly.at(T_flag * NCOEF);
 
-        gas.H0[j] = gcon * gas.T * (
-                   - coeff[0] * Ts[0] 
+        gas.H0[j] = - coeff[0] * Ts[0] 
                    + coeff[1] * Ts[1] * Ts[2] 
                    + coeff[2] 
                    + 0.5 * coeff[3] * Ts[3] 
                    + 0.333 * coeff[4] * Ts[4] 
                    + 0.25 * coeff[5] * Ts[5] 
                    + 0.2 * coeff[6] * Ts[6] 
-                   + coeff[7] * Ts[1]);
+                   + coeff[7] * Ts[1];
 
-        gas.S0[j] = gcon * (
-                   - 0.5 * coeff[0] * Ts[0] 
+        gas.S0[j] = - 0.5 * coeff[0] * Ts[0] 
                    - coeff[1] * Ts[1]
                    + coeff[2] * Ts[2]
                    + coeff[3] * Ts[3] 
                    + 0.5 * coeff[4] * Ts[4] 
                    + 0.333 * coeff[5] * Ts[5] 
                    + 0.25 * coeff[6] * Ts[6] 
-                   + coeff[8]);
+                   + coeff[8];
 
-        gas.mu0[j] = gas.H0[j] - gas.T * gas.S0[j];        
+        gas.mu0[j] = gcon * gas.T * (gas.H0[j] - gas.S0[j]);        
     }
 
     compute_formation_enthalpies();
@@ -190,7 +240,7 @@ void equilibrium::compute_molar_fractions() {
     int iteration = 0;    
     double residual = norm(X_new.data(), X.data(), NSP);
 
-    while (residual > 1e-8) {
+    while (residual > 1e-10) {
 
         fill(J.begin(), J.end(), 0.0);
         (this->*form_system)(J.data(), F.data());        
@@ -264,36 +314,74 @@ void equilibrium::display_gas_properties() {
 }
 
 void equilibrium::plot_concentrations_for_T_range() {
-    
-    double rho = 0.1, e;
-    double T_eq = 1300;
 
-    ofstream mass("mass_fractions.csv");
-    ofstream molar("molar_fractions.csv");
 
-    mass << "T, N2, O2, NO, N, O, Ar, Ar+, N+, O+, NO+, e-" << endl;
-    molar << "T, N2, O2, NO, N, O, Ar, Ar+, N+, O+, NO+, e-" << endl;
+    // Buffers to hold (T, fractions...) so we can write Tecplot zones with correct I count
+    std::vector<std::vector<double>> mass_rows;   // each row: [T, Y1, Y2, ...]
+    std::vector<std::vector<double>> molar_rows;  // each row: [T, X1, X2, ...]
 
     int counter = 0;
-    while (T_eq < 20000) {
-            e = 717 * T_eq + 20000 * counter;
-            compute_equilibrium(rho, e);
 
-            mass << gas.T; // Temperature
-            molar << gas.T; // Temperature
-            for (int i = 0; i < NSP; ++i) mass << ", " << gas.Y[i];  // Mass fractions 
-            for (int i = 0; i < NSP; ++i) molar << ", " << gas.X[i];  // Molar fractions 
-            mass << "\n";
-            molar << "\n";
+    int ni = 194;
 
-            counter++; 
-            T_eq = gas.T;
-            if (counter % 100 == 0) cout << T_eq << endl;
+    for (int i = 0; i < ni; ++i) {
+        double T = 500.0 + static_cast<double>(i) * 100.0;
+        
+        compute_equilibrium_TP(T, 101325.0);
+
+        // Build a row for mass fractions
+        std::vector<double> mass_row;
+        mass_row.reserve(NSP + 1);
+        mass_row.push_back(gas.T);
+        for (int i = 0; i < NSP; ++i) mass_row.push_back(gas.Y[i]);
+        mass_rows.push_back(std::move(mass_row));
+
+        // Build a row for molar fractions
+        std::vector<double> molar_row;
+        molar_row.reserve(NSP + 1);
+        molar_row.push_back(gas.T);
+        for (int i = 0; i < NSP; ++i) molar_row.push_back(gas.X[i]);
+        molar_rows.push_back(std::move(molar_row));
+
+        counter++;
     }
 
-    mass.close();
-    molar.close();
+    // Write Tecplot file with two zones
+    std::ofstream tec("concentrations_tecplot.dat");
+    tec << "TITLE = \"Equilibrium concentrations vs Temperature\"\n";
+
+    // VARIABLES line: T plus each species (same for both zones)
+    tec << "VARIABLES = \"T\"";
+    for (int i = 0; i < NSP; ++i) tec << ", \"" << gas.species[i].name << "\"";
+    tec << "\n";
+
+    tec << std::scientific << std::setprecision(8);
+
+    // ---- ZONE 1: Mass fractions ----
+    tec << "ZONE T=\"Mass Fractions\", I=" << ni
+        << ", F=POINT\n";
+    for (const auto& row : mass_rows) {
+        for (size_t j = 0; j < row.size(); ++j) {
+            if (j) tec << ' ';
+            tec << row[j];
+        }
+        tec << '\n';
+    }
+
+    // ---- ZONE 2: Molar fractions ----
+    tec << "ZONE T=\"Molar Fractions\", I=" << static_cast<int>(molar_rows.size())
+        << ", F=POINT\n";
+    for (const auto& row : molar_rows) {
+        for (size_t j = 0; j < row.size(); ++j) {
+            if (j) tec << ' ';
+            tec << row[j];
+        }
+        tec << '\n';
+    }
+
+    tec.close();
 }
+
 
 void equilibrium::form_system_ions(double* J, double* F) {
 

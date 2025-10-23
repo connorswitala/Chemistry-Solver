@@ -8,7 +8,7 @@ int main() {
 
 
     string mix_type;
-    mix_type = "air11";    
+    mix_type = "air5";    
 
     auto start = NOW;
 

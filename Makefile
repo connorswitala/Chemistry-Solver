@@ -13,19 +13,22 @@ SRC_DIR			:= source
 # Files
 COMMON_AIR_SRC 	:= $(COMMON_AIR_DIR)/commonMixes.cpp
 SOLVER_SRC     	:= $(SOLVER_DIR)/equilibrium.cpp
-GIBBS_SRC      	:= $(SRC_DIR)/gibbs.cpp
+GIBBS_RE_SRC    := $(SRC_DIR)/gibbs_re.cpp
+GIBBS_TP_SRC    := $(SRC_DIR)/gibbs_tp.cpp
 PLOT_SRC		:= $(SRC_DIR)/plot.cpp
 
 COMMON_AIR_OBJ := $(BUILD_DIR)/commonMixes.o
 SOLVER_OBJ     := $(BUILD_DIR)/equilibrium.o
-GIBBS_OBJ       := $(BUILD_DIR)/gibbs.o
-PLOT_OBJ		:= $(BUILD_DIR)/plot.o
+GIBBS_RE_OBJ   := $(BUILD_DIR)/gibbs_re.o
+GIBBS_TP_OBJ   := $(BUILD_DIR)/gibbs_tp.o
+PLOT_OBJ	   := $(BUILD_DIR)/plot.o
 
-GIBBS_TARGET    := $(BIN_DIR)/gibbs
+GIBBS_RE_TARGET := $(BIN_DIR)/gibbs_re
+GIBBS_TP_TARGET := $(BIN_DIR)/gibbs_tp
 PLOT_TARGET		:= $(BIN_DIR)/plot
 
 # ===== Targets =====
-all: $(GIBBS_TARGET) $(PLOT_TARGET)
+all: $(GIBBS_RE_TARGET) $(GIBBS_TP_TARGET) $(PLOT_TARGET)
 
 # Create build directory if missing
 $(BUILD_DIR):
@@ -38,14 +41,20 @@ $(COMMON_AIR_OBJ): $(COMMON_AIR_SRC) | $(BUILD_DIR)
 $(SOLVER_OBJ): $(SOLVER_SRC) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(GIBBS_OBJ): $(GIBBS_SRC) | $(BUILD_DIR)
+$(GIBBS_RE_OBJ): $(GIBBS_RE_SRC) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(GIBBS_TP_OBJ): $(GIBBS_TP_SRC) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(PLOT_OBJ): $(PLOT_SRC) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Link final executable
-$(GIBBS_TARGET): $(COMMON_AIR_OBJ) $(SOLVER_OBJ) $(GIBBS_OBJ)
+$(GIBBS_RE_TARGET): $(COMMON_AIR_OBJ) $(SOLVER_OBJ) $(GIBBS_RE_OBJ)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+$(GIBBS_TP_TARGET): $(COMMON_AIR_OBJ) $(SOLVER_OBJ) $(GIBBS_TP_OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(PLOT_TARGET): $(COMMON_AIR_OBJ) $(SOLVER_OBJ) $(PLOT_OBJ)

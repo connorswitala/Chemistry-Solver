@@ -15,6 +15,7 @@ class equilibrium {
     equilibrium(string gas_type);                       // Constructor.
 
     void compute_equilibrium(double rho, double e);     // All in one Equilibirum solver function
+    void compute_equilibrium_TP(double T, double P);     // All in one Equilibirum solver function
 
     void display_gas_properties();                      // Display results.
 

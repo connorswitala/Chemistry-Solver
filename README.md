@@ -2,9 +2,9 @@
 
 This repo is for solving for chemical equilibrium thermodynamics. It currently has everything necessary to compute mass/molar concentrations of air as well as thermodynamic properties at a given density and internal energy. 
 
-## Main executable.
+## Executables
 
-The main executable can be run with: ./gibbs [rho] [e] [mix_type].
+Three executables can be run. They are: ./gibbs_tp [T] [p] [mix_type], ./gibbs_re [rho] [e] [mix_type], and 
 
 [rho] is the density, [e] is the internal energy, and [mix_type] is a string that says which mixture to use. Currently, there are 5 different air mixtures available:
 
