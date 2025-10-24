@@ -237,7 +237,6 @@ namespace common_air {
         gcon / O2_ion.mw * 1000.0
     };
 
-
     mix make_air5() {
         mix air;
         air.species = {N2, O2, NO, N, O};

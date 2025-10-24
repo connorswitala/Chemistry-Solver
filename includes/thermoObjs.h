@@ -16,13 +16,16 @@ struct SpeciesInfo {
 };
 
 struct mix {
+
     vector<SpeciesInfo> species;
+
+    int N_SP, N_EL, N_ION, N_RE, N_PROD;
+
     Vector H0, S0, mu0, hf;
     double R, gamma, cp, cv, MW, Pr, mu, k, D;
     double e, rho, T, p;
     Vector Y;
-    Vector X, X0;
-    int N_SP, N_EL, N_ION, N_RE, N_PROD;
+    Vector X, X0, N;
     Vector a, b;
     double initial_moles;
     vector<int> diatomic_list;

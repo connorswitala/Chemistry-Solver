@@ -4,11 +4,15 @@
 
 using namespace std;
 
-int main() {
+int main(int argc, char* argv[]) {
 
+    if (argc < 1) {
+        cerr << "Usage: " << argv[0] << " <gas_type>\n";
+        return 1;
+    }
 
-    string mix_type;
-    mix_type = "air5";    
+    // convert command-line args to doubles
+    string mix_type = argv[1]; 
 
     auto start = NOW;
 

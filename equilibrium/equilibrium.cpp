@@ -58,7 +58,7 @@ void equilibrium::compute_equilibrium(double rho, double e) {
 
     int iteration = 0;
 
-    J_SIZE = NSP + NEL + 1;    
+    J_SIZE = NEL + 1;
     X = vector<double>(J_SIZE);
 
     X[J_SIZE - 1] = gas.initial_moles;
@@ -188,25 +188,25 @@ void equilibrium::NASA_fits() {
         const auto& poly = gas.species[j].poly;
         const double* coeff = &poly.at(T_flag * NCOEF);
 
-        gas.H0[j] = - coeff[0] * Ts[0] 
+        gas.H0[j] = gcon * gas.T * (- coeff[0] * Ts[0] 
                    + coeff[1] * Ts[1] * Ts[2] 
                    + coeff[2] 
                    + 0.5 * coeff[3] * Ts[3] 
                    + 0.333 * coeff[4] * Ts[4] 
                    + 0.25 * coeff[5] * Ts[5] 
                    + 0.2 * coeff[6] * Ts[6] 
-                   + coeff[7] * Ts[1];
+                   + coeff[7] * Ts[1]);
 
-        gas.S0[j] = - 0.5 * coeff[0] * Ts[0] 
+        gas.S0[j] = gcon * (- 0.5 * coeff[0] * Ts[0] 
                    - coeff[1] * Ts[1]
                    + coeff[2] * Ts[2]
                    + coeff[3] * Ts[3] 
                    + 0.5 * coeff[4] * Ts[4] 
                    + 0.333 * coeff[5] * Ts[5] 
                    + 0.25 * coeff[6] * Ts[6] 
-                   + coeff[8];
+                   + coeff[8]);
 
-        gas.mu0[j] = gcon * gas.T * (gas.H0[j] - gas.S0[j]);        
+        gas.mu0[j] = gas.H0[j] - gas.T * gas.S0[j];        
     }
 
     compute_formation_enthalpies();
@@ -248,7 +248,7 @@ void equilibrium::compute_molar_fractions() {
 
         for (int i = 0; i < J_SIZE; ++i) {
             X_new[i] = X[i] * exp(dx[i]);
-
+   
             if (isnan(X_new[i]) || isinf(X_new[i])) {
                     cout << "Nonphysical molar fraction computed (NaN or Inf)" << endl;
             }
@@ -382,7 +382,6 @@ void equilibrium::plot_concentrations_for_T_range() {
     tec.close();
 }
 
-
 void equilibrium::form_system_ions(double* J, double* F) {
 
         for (int i = NSP; i < J_SIZE; ++i) {
@@ -417,7 +416,7 @@ void equilibrium::form_system_ions(double* J, double* F) {
 
         for (int i = 0; i < NSP; ++i) {
             double Xi_safe = max(X[i], 1e-10); // Protect log from zero  
-            F[i] = -(gas.mu0[i] + gcon * gas.T * log(Xi_safe * gas.p / 101325.0)) / (gcon * gas.T);
+            F[i] = -(gas.mu0[i] + gcon * gas.T * log(Xi_safe * gas.p / 100000.0)) / (gcon * gas.T);
         }
 
         for (int i = 0; i < NEL; ++i) {
@@ -433,9 +432,41 @@ void equilibrium::form_system_ions(double* J, double* F) {
 
 void equilibrium::form_system_neut(double* J, double* F) {
 
-        for (int i = NSP; i < J_SIZE - 1; ++i) {
+        for (int i = 0; i < J_SIZE - 1; ++i) {
             X[i] = 0.0;
         } 
+
+
+        // Loop through rows of Jacobian matrix
+        for (int k = 0; k < NEL; ++k) {
+
+            // Loop through columns of row k for pi_i solution vector.
+            for (int i = 0; i < NEL; ++i) {
+
+
+                double stoich_sum = 0.0;
+                for (int j = 0; j < NSP; ++j) {
+                    stoich_sum += gas.a[k * NSP + j] * gas.a[i * NSP + j] * gas.N[j];
+                }
+
+                J[k * J_SIZE + i] = stoich_sum;
+            }
+
+            // Fill final column of k-th row.
+            double mole_sum = 0.0;
+            for (int j = 0; j < NSP; ++j) {
+                mole_sum += gas.a[k * NSP + j] * gas.N[j];
+            }
+
+
+            // Fill RHS vector.
+            F[k] = b[k] - 
+            
+
+
+        }
+
+
 
         for (int i = 0; i < NSP; ++i) {
 

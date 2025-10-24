@@ -31,7 +31,7 @@ class equilibrium {
 
     int NSP, NEL, NION;
 
-    Vector X;   // Old solution vector of molar concentrations..
+    Vector X;   // Old solution vector of molar concentrations.
 
 
     inline void findTRange();                       // Finds Temperature range to use proper NASA coeff.
