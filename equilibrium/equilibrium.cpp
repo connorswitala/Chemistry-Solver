@@ -5,7 +5,7 @@ equilibrium::equilibrium(string gas_type) {
 
     if (gas_type == "air11") {
         gas = common_air::make_air11();
-        form_system = &equilibrium::form_system_ions;
+        form_system = &equilibrium::form_system_neut;
     }
     if (gas_type == "air5") {
         gas = common_air::make_air5(); 
@@ -116,13 +116,25 @@ void equilibrium::compute_equilibrium_TP(double T, double P) {
     gas.e = T * gas.cv;
 
     int iteration = 0;
+    
+    J_SIZE = NEL + 1;    
+    
+    g = vector<double>(NSP);
+    lnN_old = vector<double>(NSP + 1, 0.0);
+    lnN_new = vector<double>(NSP + 1, 0.0);
+    dln = vector<double>(NSP + 1, 0.0);
+    N = vector<double>(NSP + 1, 0.0);
 
-    J_SIZE = NSP + NEL + 1;    
-    X = vector<double>(J_SIZE);
+    gas.N_tot = 0.1;
+    double avg_N = gas.N_tot / NSP;
 
-    X[J_SIZE - 1] = gas.initial_moles;
-    double avg_x = gas.initial_moles / NSP;
-    for (int i = 0; i < NSP; ++i) X[i] = avg_x;
+    for (int i = 0; i < NSP; ++i) {
+        N[i] = avg_N;
+        lnN_old[i] = log(avg_N);
+    }
+
+    lnN_old[NSP] = gas.N_tot;
+    N[NSP] = log(gas.N_tot);
 
     NASA_fits();
     compute_molar_fractions();
@@ -235,39 +247,53 @@ void equilibrium::compute_formation_enthalpies() {
 
 void equilibrium::compute_molar_fractions() {
 
-    vector<double> X_new(J_SIZE, 0.0), dx(J_SIZE, 0.0), F(J_SIZE, 0.0), J(J_SIZE * J_SIZE, 0.0); 
+    vector<double> dx(J_SIZE, 0.0), F(J_SIZE, 0.0), J(J_SIZE * J_SIZE, 0.0); 
 
     int iteration = 0;    
-    double residual = norm(X_new.data(), X.data(), NSP);
+    double RH_sum, e;
+    bool converged = false;
 
-    while (residual > 1e-10) {
+    while (!converged) {
 
-        fill(J.begin(), J.end(), 0.0);
+
         (this->*form_system)(J.data(), F.data());        
         matrix_divide(J.data(), F.data(), dx.data(), J_SIZE, 1);
 
-        for (int i = 0; i < J_SIZE; ++i) {
-            X_new[i] = X[i] * exp(dx[i]);
-   
-            if (isnan(X_new[i]) || isinf(X_new[i])) {
-                    cout << "Nonphysical molar fraction computed (NaN or Inf)" << endl;
+        // ---- compute delta ln(N_j) for each species
+        for (int j = 0; j < NSP; ++j) {
+
+            RH_sum = 0.0;
+            for (int i = 0; i < NEL; ++i){
+                RH_sum += gas.a[i * NSP + j] * dx[i];
             }
 
-            if (X_new[i] < 0) {
-                    cout << "Negative molar fraction computed" << endl;
-            }
+            dln[j] = dx[NEL] + RH_sum - g[j];
         }
 
-        residual = norm(X_new.data(), X.data(), NSP);
-        X = X_new;
+        dln[NSP] = dx[NEL];
+
+        // ---- find damping coefficient for update
+        e = find_damping();
+       
+
+        // ---- apply damped update
+        for (int j = 0; j < NSP; ++j) {
+            lnN_new[j] = lnN_old[j] + e * dln[j];
+            N[j]       = exp(lnN_new[j]);
+        }
+        lnN_new[NSP] = lnN_old[NSP] + e * dln[NSP];   // total
+        N[NSP]       = exp(lnN_new[NSP]);
+
+        // ---- check convergence and set old = new    
+        converged = check_convergence(); 
+        lnN_old = lnN_new;
         iteration++;
     }
 
-    double sum = 0.0;
-    for (int i = 0; i < NSP; ++i) sum += X[i];
+    cout << "-- Iterations: " << iteration << endl;
 
     for (int i = 0; i < NSP; ++i) {
-            gas.X[i] = X_new[i]/sum;
+            gas.X[i] = N[i]/N[NSP];
     }
 
     compute_mass_fractions();
@@ -382,7 +408,7 @@ void equilibrium::plot_concentrations_for_T_range() {
     tec.close();
 }
 
-void equilibrium::form_system_ions(double* J, double* F) {
+void equilibrium::add_system_ions(double* J, double* F) {
 
         for (int i = NSP; i < J_SIZE; ++i) {
             X[i] = 0.0;
@@ -432,85 +458,121 @@ void equilibrium::form_system_ions(double* J, double* F) {
 
 void equilibrium::form_system_neut(double* J, double* F) {
 
-        for (int i = 0; i < J_SIZE - 1; ++i) {
-            X[i] = 0.0;
-        } 
+        vector<double> akj_N(NSP);
+        double asum, gsum, stoich_sum, Nsum;
+        double N_safe;
 
+        double pref = 100000.0;
+
+        for (int j = 0; j < NSP; ++j) {
+            N_safe = max(N[j], 1e-10); // Protect log from zero
+            g[j] = log(gas.p/pref * N_safe) + gas.mu0[j] / (gcon * gas.T);
+        }
 
         // Loop through rows of Jacobian matrix
         for (int k = 0; k < NEL; ++k) {
 
+            asum = 0.0;
+            gsum = 0.0;
+
+            for (int j = 0; j < NSP; ++j) {
+                akj_N[j] = gas.a[k * NSP + j] * N[j];
+                asum += akj_N[j];
+            }
+
             // Loop through columns of row k for pi_i solution vector.
             for (int i = 0; i < NEL; ++i) {
 
-
-                double stoich_sum = 0.0;
+                stoich_sum = 0.0;
                 for (int j = 0; j < NSP; ++j) {
-                    stoich_sum += gas.a[k * NSP + j] * gas.a[i * NSP + j] * gas.N[j];
+                    stoich_sum += akj_N[j] * gas.a[i * NSP + j];
                 }
 
                 J[k * J_SIZE + i] = stoich_sum;
             }
 
-            // Fill final column of k-th row.
-            double mole_sum = 0.0;
-            for (int j = 0; j < NSP; ++j) {
-                mole_sum += gas.a[k * NSP + j] * gas.N[j];
-            }
-
+            J[k * J_SIZE + NEL] = asum;
 
             // Fill RHS vector.
-            F[k] = b[k] - 
+            for (int j = 0; j < NSP; ++j) 
+                gsum += akj_N[j] * g[j];
             
-
-
+            F[k] = gas.b[k] - asum + gsum;
         }
 
-
-
-        for (int i = 0; i < NSP; ++i) {
-
-            J[i * J_SIZE + i] = 1.0;  // Identity part
-
-            for (int k = 0; k < NEL; ++k) {
-                J[i * J_SIZE + NSP + k] = -gas.a[k * NSP + i];  // -a[k][i] 
-            }
-
-            J[i * J_SIZE + J_SIZE - 1] = -1.0;
-        }       
-
-        for (int k = 0; k < NEL; ++k) {
-            for (int j = 0; j < NSP; ++j) {
-                J[(NSP + k) * J_SIZE + j] = gas.a[k * NSP + j] * X[j];  // a[k][j] * X[j]   
-            }
-        // last 4 entries (cols 10–13) remain 0
-        }
+        gsum = 0.0;
+        Nsum = 0.0;
 
         for (int j = 0; j < NSP; ++j) {
-            J[(J_SIZE - 1) * J_SIZE + j] = X[j];
-        }
-
-        J[J_SIZE * J_SIZE - 1] = -X[J_SIZE - 1];
-
-        for (int i = 0; i < NSP; ++i) {
-            double Xi_safe = max(X[i], 1e-10); // Protect log from zero
-            F[i] = -(gas.mu0[i] + gcon * gas.T * log(Xi_safe * gas.p / 101325.0)) / (gcon * gas.T);
+            Nsum += N[j];
+            gsum += N[j] * g[j];
         }
 
         for (int i = 0; i < NEL; ++i) {
-            double sum = 0.0;
-            for (int j = 0; j < NSP; ++j) sum += gas.a[i * NSP + j] * X[j];
-            F[NSP + i] = gas.b[i] - sum;
+            
+            asum = 0.0;
+
+            for (int j = 0; j < NSP; ++j) {
+                asum += gas.a[i * NSP + j] * N[j];
+            }
+
+            J[NEL * J_SIZE + i] = asum;
         }
 
-        double sum = 0.0;
-        for (int i = 0; i < NSP; ++i) sum += X[i];
-        F[J_SIZE - 1] = gas.initial_moles - sum;
+        J[NEL * J_SIZE + NEL] = Nsum - N[NSP];
+        F[NEL] = N[NSP] - Nsum + gsum;
+
 }
 
+bool equilibrium::check_convergence() {
 
+    double sum = 0.0, check, tol = 0.5e-5;
 
+    for (int j = 0; j < NSP; ++j) 
+        sum += N[j];
+    
 
+    for (int j = 0; j < NSP; ++j) {
+        check = N[j] * fabs(dln[j]) / sum;
+        if (check > tol) return false;
+    }
+
+    if (N[NSP] * fabs(dln[NSP]) / sum > tol)
+        return false;
+
+    return true;
+}
+
+double equilibrium::find_damping() {
+
+    const double SIZE = -log(1e-8), eps = 1e-14;
+
+     // ---- e1
+    double maxAbs_dlnj = 0.0;
+    for (int j = 0; j < NSP; ++j)
+        maxAbs_dlnj = max(maxAbs_dlnj, abs(dln[j]));
+    double e1 = 2.0 / max(5.0 * abs(dln[NSP]), maxAbs_dlnj);
+
+    // ---- e2 (min over eligible species)
+    double e2 = 1.0;
+    bool any = false;
+    for (int j = 0; j < NSP; ++j) {
+        double frac_log = log(max(N[j],1e-300) / max(N[NSP],1e-300)); // ln(Nj/N)
+        if (frac_log <= -SIZE && dln[j] >= 0.0) {
+            double den = dln[j] - dln[NSP];
+            if (abs(den) > eps) {
+                double num = -frac_log - 9.2103404; // ln(1e4)
+                double cand = abs(num / den);
+                e2 = min(e2, cand);
+                any = true;
+            }
+        }
+    }
+    if (!any) e2 = 1.0;
+
+    // ---- final damping
+    return min(1.0, min(e1, e2));
+}
 
 
 

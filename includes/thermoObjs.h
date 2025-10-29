@@ -25,12 +25,12 @@ struct mix {
     double R, gamma, cp, cv, MW, Pr, mu, k, D;
     double e, rho, T, p;
     Vector Y;
-    Vector X, X0, N;
+    Vector X, X0;
     Vector a, b;
-    double initial_moles;
+    double initial_moles, N_tot;
     vector<int> diatomic_list;
     vector<int> mono_list;
-    bool perf_flag;
+    bool perf_flag, HAS_IONS;
     Vector reactant_idx;
     Vector product_idx;
     Vector reactions;

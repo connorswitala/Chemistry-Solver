@@ -1,0 +1,24 @@
+
+-- 5 species air mix created. Contains: N2, O2, NO, N, O, 
+-- Iterations: 10
+
+         Mixture Temperature: 15000 [K]
+            Mixture Pressure: 101.325 [kPa]
+             Mixture Density: 0.0235366 [kg/m^3]
+     Mixture Internal Energy: 42355 [kJ/kg]
+        Mixture Gas Constant: 575.585 [J/kg-K]
+                  Mixture cp: 3399.25 [J/kg-K]
+                  Mixture cv: 2823.67 [J/kg-K]
+               Mixture gamma: 1.20384
+                  Mixture MW: 14.4452 [g/mol]
+
+                               ====: Species Molar Fractions :==== 
+        N2: 0.0001	        O2: 0.0000	        NO: 0.0000	         N: 0.7807	
+         O: 0.2192	
+
+                                ====: Species Mass Fractions :==== 
+        N2: 0.0002	        O2: 0.0000	        NO: 0.0000	         N: 0.7570	
+         O: 0.2428	
+
+-- Time elaped: 0.000175 s.
+

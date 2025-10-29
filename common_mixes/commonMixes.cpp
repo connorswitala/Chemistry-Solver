@@ -284,6 +284,7 @@ namespace common_air {
         }
 
         air.initial_moles = 1.0;
+        air.HAS_IONS = false; 
 
         cout << endl << "-- " << air.N_SP << " species air mix created. Contains: ";
         for (int i = 0; i < air.N_SP; ++i) cout << air.species[i].name << ", ";
@@ -343,6 +344,7 @@ namespace common_air {
         }
 
         air.initial_moles = 1.0;
+        air.HAS_IONS = true;
 
         cout << endl << "-- " << air.N_SP << " species air mix created. Contains: ";
         for (int i = 0; i < air.N_SP; ++i) cout << air.species[i].name << ", ";

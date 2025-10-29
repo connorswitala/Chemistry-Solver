@@ -31,8 +31,7 @@ class equilibrium {
 
     int NSP, NEL, NION;
 
-    Vector X;   // Old solution vector of molar concentrations.
-
+    Vector X, g, lnN_old, lnN_new, dln, N;   // Old solution vector of molar concentrations.
 
     inline void findTRange();                       // Finds Temperature range to use proper NASA coeff.
 
@@ -46,7 +45,11 @@ class equilibrium {
 
     void compute_formation_enthalpies();            // Computes formation enthalpies.
 
-    void form_system_ions(double* J, double* F);
+    bool check_convergence();
+
+    double find_damping();
+
+    void add_system_ions(double* J, double* F);
     void form_system_neut(double* J, double* F);
 
     using systemptr = void (equilibrium::*)(double*, double*);

@@ -19,6 +19,7 @@ int main(int argc, char* argv[]) {
     auto start = NOW;
 
     equilibrium myeq(mix_type);
+    
     myeq.compute_equilibrium_TP(T, p);
 
     auto end = NOW;
@@ -26,7 +27,7 @@ int main(int argc, char* argv[]) {
 
     myeq.display_gas_properties();
 
-    cout << endl << endl << "-- Time elaped: " << fixed << setprecision(4) << duration << " s." << endl << endl;
+    cout << endl << endl << "-- Time elaped: " << fixed << setprecision(6) << duration << " s." << endl << endl;
 
     return 0;
 }
