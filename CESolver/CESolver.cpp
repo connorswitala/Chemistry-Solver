@@ -1,177 +1,97 @@
-#include "equilibrium.h"
+#include "CESolver.h"
 
 
-equilibrium::equilibrium(string gas_type) {
+CESolver::CESolver(GasType& gastype, ConstraintType& constrainttype) {
 
-    if (gas_type == "air11") {
-        gas = common_air::make_air11();
-        form_system = &equilibrium::form_system_neut;
+    switch (gastype) {
+        case::GasType::AIR5:
+            gas = common_air::make_air5();
+            break;
+
+        case::GasType::AIR11:
+            gas = common_air::make_air11();
+            break;
+
+        case::GasType::AIR11_AR:
+            gas = common_air::make_air11_Ar();
+            break;
+
+        case::GasType::AIR13:
+            gas = common_air::make_air13();
+            break;
+
+        case::GasType::CREATE:
+            // Will need to be made.
+            break;
     }
-    if (gas_type == "air5") {
-        gas = common_air::make_air5(); 
-        form_system  = &equilibrium::form_system_neut;
-    }
-    if (gas_type == "air11_Ar") {
-        gas = common_air::make_air11_Ar();
-        form_system = &equilibrium::form_system_ions;
+
+    switch (constrainttype) {
+        case::ConstraintType::TP:
+            cfg.energy_type = EnergyType::Gibbs;
+            cfg.constraint_type = ConstraintType::TP;
+            cfg.NEEDS_T = false;
+            break;
+
+        case::ConstraintType::HP:
+            cfg.energy_type = EnergyType::Gibbs;
+            cfg.constraint_type = ConstraintType::HP;
+            cfg.NEEDS_T = true;
+            break;
+
+        case::ConstraintType::SP:
+            cfg.energy_type = EnergyType::Gibbs;
+            cfg.constraint_type = ConstraintType::SP;
+            cfg.NEEDS_T = true;
+            break;
+
+        case::ConstraintType::TV:
+            cfg.energy_type = EnergyType::Helmholtz;
+            cfg.constraint_type = ConstraintType::TV;
+            cfg.NEEDS_T = false;
+            break;
+
+        case::ConstraintType::UV:
+            cfg.energy_type = EnergyType::Helmholtz;
+            cfg.constraint_type = ConstraintType::UV;
+            cfg.NEEDS_T = true;
+            break;
+
+        case::ConstraintType::SV:
+            cfg.energy_type = EnergyType::Helmholtz;
+            cfg.constraint_type = ConstraintType::SV;
+            cfg.NEEDS_T = true;
+            break;
     }
 
-    if (gas_type == "air13") {
-        gas = common_air::make_air13();
-        form_system = &equilibrium::form_system_ions;
-    }
+    if (gas.HAS_IONS) cfg.HAS_IONS = true;
 
-    if (gas_type == "perf") {
-        gas = common_air::make_perf();
-        return;
-    }
+    matrix_tasks = energy::build_matrix_tasks(cfg); 
+    mu_task = energy::build_mu_task(cfg);
 
-    NCOEF = 9;
-    NION = gas.N_ION;
-    NSP = gas.N_SP;
-    NEL = gas.N_EL;
+    NI = gas.NI;
+    NS = gas.NS;
+    NE = gas.NE;
+    J_SIZE = NE + gas.HAS_IONS + cfg.NEEDS_T;
+    gas.J_SIZE = J_SIZE;
+}
+
+void CESolver::compute_equilibrium(double rho, double e) {
+    
+
+
+
 
 }
 
-void equilibrium::compute_equilibrium(double rho, double e) {
-    
-    if (gas.perf_flag) {
-        gas.T = e / gas.cv;
-        gas.rho = rho;
-        gas.p = rho * gas.R * gas.T;
-        gas.e = e;
-        compute_mass_fractions();
-        return; 
-    }
 
-    double e_new = 0, cv_new = 0;     
-    gas.rho = rho;
-    gas.e = e;
-
-    if (e > 1e7) {
-        gas.T = 15000.0;
-    }
-    else gas.T = gas.e / gas.cv;
-
-    gas.p = rho * gas.R * gas.T; 
-
-
-    int iteration = 0;
-
-    J_SIZE = NEL + 1;
-    X = vector<double>(J_SIZE);
-
-    X[J_SIZE - 1] = gas.initial_moles;
-    double avg_x = gas.initial_moles / NSP;
-    for (int i = 0; i < NSP; ++i) X[i] = avg_x;
-
-    while (fabs(e_new - e) >= 100) {
-
-        NASA_fits();
-        compute_molar_fractions();
-
-        e_new = 0.0;
-        for (int i : gas.diatomic_list) {
-            e_new += gas.Y[i] * (2.5 * gas.species[i].R * gas.T 
-                     + gas.species[i].R * gas.species[i].theta_v / (exp(gas.species[i].theta_v / gas.T) - 1)    
-                     + gas.hf[i]); //diatomic species
-        }
-
-        for (int i : gas.mono_list) {
-            e_new += gas.Y[i] * (1.5 * gas.species[i].R * gas.T 
-                     + gas.hf[i]); // atomic species
-        }
-        
-        cv_new = e_new / gas.T;
-        gas.T = gas.T - 0.5 * (e_new - e) / cv_new;
-
-        gas.MW = 0.0;
-        for (int i = 0; i < NSP; ++i) {    
-            gas.MW += gas.X[i] * gas.species[i].mw;
-        }
-        
-        gas.R = gcon * 1000.0 / gas.MW;
-        gas.p = gas.rho * gas.R * gas.T;
-        gas.cv = cv_new;
-        iteration++;   
-    }
-
-    gas.cp = gas.R + gas.cv;
-    gas.gamma = gas.cp / gas.cv;
-}
-
-void equilibrium::compute_equilibrium_TP(double T, double P) {
-    
-    if (gas.perf_flag) {
-        gas.T = T;
-        gas.p = P;
-        gas.rho = gas.p / (gas.R * gas.T);
-        gas.e = gas.cv * gas.T;
-        return; 
-    }
-
-    gas.T = T;
-    gas.p = P;
-    gas.rho = gas.p / (gas.R * gas.T);
-    gas.e = T * gas.cv;
-
-    int iteration = 0;
-    
-    J_SIZE = NEL + 1;    
-    
-    g = vector<double>(NSP);
-    lnN_old = vector<double>(NSP + 1, 0.0);
-    lnN_new = vector<double>(NSP + 1, 0.0);
-    dln = vector<double>(NSP + 1, 0.0);
-    N = vector<double>(NSP + 1, 0.0);
-
-    gas.N_tot = 0.1;
-    double avg_N = gas.N_tot / NSP;
-
-    for (int i = 0; i < NSP; ++i) {
-        N[i] = avg_N;
-        lnN_old[i] = log(avg_N);
-    }
-
-    lnN_old[NSP] = gas.N_tot;
-    N[NSP] = log(gas.N_tot);
-
-    NASA_fits();
-    compute_molar_fractions();
-
-    gas.e = 0.0;
-    for (int i : gas.diatomic_list) {
-        gas.e += gas.Y[i] * (2.5 * gas.species[i].R * gas.T 
-                    + gas.species[i].R * gas.species[i].theta_v / (exp(gas.species[i].theta_v / gas.T) - 1)    
-                    + gas.hf[i]); //diatomic species
-    }
-
-    for (int i : gas.mono_list) {
-        gas.e += gas.Y[i] * (1.5 * gas.species[i].R * gas.T 
-                    + gas.hf[i]); // atomic species
-    }
-    
-    gas.cv = gas.e / gas.T;
-
-    gas.MW = 0.0;
-    for (int i = 0; i < NSP; ++i) {    
-        gas.MW += gas.X[i] * gas.species[i].mw;
-    }
-    
-    gas.R = gcon * 1000.0 / gas.MW;
-    gas.cp = gas.R + gas.cv;
-    gas.gamma = gas.cp / gas.cv;
-}
-
-
-inline void equilibrium::findTRange() {
+inline void CESolver::findTRange() {
     if      (gas.T >= 200.0   && gas.T <= 1000.0)   T_flag = 0; 
     else if (gas.T >  1000.0  && gas.T <= 6000.0)   T_flag = 1; 
     else if (gas.T >  6000.0  && gas.T <= 20000.0)  T_flag = 2;
     else T_flag = -1;
 }
 
-inline array<double, 7> equilibrium::temp_base(double T) {
+inline array<double, 7> CESolver::temp_base(double T) {
 
     array<double, 7> Ts;
     double T_inverse = 1/T;
@@ -187,7 +107,7 @@ inline array<double, 7> equilibrium::temp_base(double T) {
     return Ts;
 }
 
-void equilibrium::NASA_fits() {
+void CESolver::NASA_fits() {
 
     // H(T) / RT = -a0 * T^(-2) + a1 * ln(T)/T + a2 + a3 * T/2 + a4 * T^2 / 3 + a5 * T^3/4 + a6 * T^4 / 5 + a7 / T
     // S(T) / R = -a0 * T^(-2)/2 - a1 / T + a2 * ln(T) + a3 * T + a4 * T^2 / 2 + a5 * T^3/3 + a6 * T^4 / 4 + a8
@@ -195,36 +115,44 @@ void equilibrium::NASA_fits() {
     findTRange();                           // Find the temperature range to use for NASA Polynomials
     const auto Ts = temp_base(gas.T);       // Calculate Temperature variables.
 
-    for (int j = 0; j < NSP; ++j) {
+    for (int j = 0; j < NS; ++j) {
 
         const auto& poly = gas.species[j].poly;
         const double* coeff = &poly.at(T_flag * NCOEF);
 
-        gas.H0[j] = gcon * gas.T * (- coeff[0] * Ts[0] 
+        gas.H0_RT[j] = - coeff[0] * Ts[0] 
                    + coeff[1] * Ts[1] * Ts[2] 
                    + coeff[2] 
                    + 0.5 * coeff[3] * Ts[3] 
                    + 0.333 * coeff[4] * Ts[4] 
                    + 0.25 * coeff[5] * Ts[5] 
                    + 0.2 * coeff[6] * Ts[6] 
-                   + coeff[7] * Ts[1]);
+                   + coeff[7] * Ts[1];
 
-        gas.S0[j] = gcon * (- 0.5 * coeff[0] * Ts[0] 
+        gas.S0_R[j] = - 0.5 * coeff[0] * Ts[0] 
                    - coeff[1] * Ts[1]
                    + coeff[2] * Ts[2]
                    + coeff[3] * Ts[3] 
                    + 0.5 * coeff[4] * Ts[4] 
                    + 0.333 * coeff[5] * Ts[5] 
                    + 0.25 * coeff[6] * Ts[6] 
-                   + coeff[8]);
+                   + coeff[8];
 
-        gas.mu0[j] = gas.H0[j] - gas.T * gas.S0[j];        
+        gas.CP0_R[j] = coeff[0] * Ts[0]
+                     + coeff[1] * Ts[1]
+                     + coeff[2]
+                     + coeff[3] * Ts[3]
+                     + coeff[4] * Ts[4]
+                     + coeff[5] * Ts[5]
+                     + coeff[6] * Ts[6];
+
+        gas.mu0_RT[j] = gas.H0_RT[j] - gas.S0_R[j];        
     }
 
     compute_formation_enthalpies();
 }
 
-void equilibrium::compute_formation_enthalpies() {
+void CESolver::compute_formation_enthalpies() {
     
     for (int i : gas.reactant_idx) {
         gas.hf[i] = 0.0;
@@ -236,16 +164,24 @@ void equilibrium::compute_formation_enthalpies() {
         double sum = 0.0;
 
         for (int j = 0; j < gas.N_RE; ++j) {
-            sum += gas.reactions[k * gas.N_RE + j] * gas.H0[gas.reactant_idx[j]];
+            sum += gas.reactions[k * gas.N_RE + j] * gas.H0_RT[gas.reactant_idx[j]];
         }
-        gas.hf[i] = (gas.H0[i] - sum) * 1000.0 / gas.species[i].mw;
+        gas.hf[i] = (gas.H0_RT[i] - sum) * 1000.0 / gas.species[i].mw;
         k++;
     }
 
     gas.hf.back() = 0.0;     
 }
 
-void equilibrium::compute_molar_fractions() {
+void CESolver::compute_mu() {
+
+    for (int j = 0; j < NS; ++j) {
+        gas.mu_RT[j] = 
+    }
+
+}
+
+void CESolver::compute_molar_fractions() {
 
     vector<double> dx(J_SIZE, 0.0), F(J_SIZE, 0.0), J(J_SIZE * J_SIZE, 0.0); 
 
@@ -254,7 +190,6 @@ void equilibrium::compute_molar_fractions() {
     bool converged = false;
 
     while (!converged) {
-
 
         (this->*form_system)(J.data(), F.data());        
         matrix_divide(J.data(), F.data(), dx.data(), J_SIZE, 1);
@@ -299,7 +234,7 @@ void equilibrium::compute_molar_fractions() {
     compute_mass_fractions();
 }
 
-void equilibrium::compute_mass_fractions() {
+void CESolver::compute_mass_fractions() {
 
         gas.MW = 0.0;
         for (int i = 0; i < NSP; ++i) {
@@ -311,7 +246,7 @@ void equilibrium::compute_mass_fractions() {
         }
 }
 
-void equilibrium::display_gas_properties() {
+void CESolver::display_gas_properties() {
 
 
     cout << endl << setw(30) << "Mixture Temperature: " << gas.T << " [K]" << endl;
@@ -339,7 +274,7 @@ void equilibrium::display_gas_properties() {
     }
 }
 
-void equilibrium::plot_concentrations_for_T_range() {
+void CESolver::plot_concentrations_for_T_range() {
 
 
     // Buffers to hold (T, fractions...) so we can write Tecplot zones with correct I count
@@ -408,7 +343,7 @@ void equilibrium::plot_concentrations_for_T_range() {
     tec.close();
 }
 
-void equilibrium::add_system_ions(double* J, double* F) {
+void CESolver::form_system_ions(double* J, double* F) {
 
         for (int i = NSP; i < J_SIZE; ++i) {
             X[i] = 0.0;
@@ -456,7 +391,7 @@ void equilibrium::add_system_ions(double* J, double* F) {
         F[J_SIZE - 1] = -sum;
 }
 
-void equilibrium::form_system_neut(double* J, double* F) {
+void CESolver::form_system_neut(double* J, double* F) {
 
         vector<double> akj_N(NSP);
         double asum, gsum, stoich_sum, Nsum;
@@ -524,7 +459,7 @@ void equilibrium::form_system_neut(double* J, double* F) {
 
 }
 
-bool equilibrium::check_convergence() {
+bool CESolver::check_convergence() {
 
     double sum = 0.0, check, tol = 0.5e-5;
 
@@ -543,7 +478,7 @@ bool equilibrium::check_convergence() {
     return true;
 }
 
-double equilibrium::find_damping() {
+double CESolver::find_damping() {
 
     const double SIZE = -log(1e-8), eps = 1e-14;
 

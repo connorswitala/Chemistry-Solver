@@ -1,21 +1,23 @@
-#ifndef EQUILIBRIUM_H
-#define EQUILIBRIUM_H
+#ifndef CESolver_H
+#define CESolver_H
 
 #include "../common_mixes/commonMixes.h"
+#include "../energy_functions/functions.h"
 #include "../includes/math.h"
 
 using namespace std;
+using Task = void(*)(double*, double*, mix&);
 
-class equilibrium {
+class CESolver {
         
     public:
 
     mix gas;    // Main object.
+    Context cfg; // Configuration Struct
 
-    equilibrium(string gas_type);                       // Constructor.
+    CESolver(GasType& gastype, ConstraintType& contrainttype);                       // Constructor.
 
     void compute_equilibrium(double rho, double e);     // All in one Equilibirum solver function
-    void compute_equilibrium_TP(double T, double P);     // All in one Equilibirum solver function
 
     void display_gas_properties();                      // Display results.
 
@@ -23,13 +25,17 @@ class equilibrium {
     
     private:
 
+
+    vector<Task> = build_tasks();
+
     int T_flag; // Flags which set of NASA coefficients to use.
 
     int J_SIZE; // Size of solution vector in Newton Method.
 
-    int NCOEF;  // Number of NASA polynomial coefficients (Always 9).
+    vector<MTask> matrix_tasks;
+    muTask mu_task;
 
-    int NSP, NEL, NION;
+    int NS, NE, NI;
 
     Vector X, g, lnN_old, lnN_new, dln, N;   // Old solution vector of molar concentrations.
 
@@ -38,6 +44,8 @@ class equilibrium {
     inline array<double, 7> temp_base(double T);    // Calculates Temperature functions for NASA poly.
 
     void NASA_fits();                               // Calculates H0, S0, and MU0.
+
+    void compute_mu();
 
     void compute_molar_fractions();                 // Newton Iteration to solve for concentrations.
 
@@ -49,7 +57,7 @@ class equilibrium {
 
     double find_damping();
 
-    void add_system_ions(double* J, double* F);
+    void form_system_ions(double* J, double* F);
     void form_system_neut(double* J, double* F);
 
     using systemptr = void (equilibrium::*)(double*, double*);
