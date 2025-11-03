@@ -64,23 +64,54 @@ CESolver::CESolver(GasType& gastype, ConstraintType& constrainttype) {
     }
 
     if (gas.HAS_IONS) cfg.HAS_IONS = true;
+    else cfg.HAS_IONS = false;
 
     matrix_tasks = energy::build_matrix_tasks(cfg); 
     mu_task = energy::build_mu_task(cfg);
+    Nj_task = energy::build_Nj_task(cfg);
 
     NI = gas.NI;
     NS = gas.NS;
     NE = gas.NE;
     J_SIZE = NE + gas.HAS_IONS + cfg.NEEDS_T;
     gas.J_SIZE = J_SIZE;
+
+    cout << "-- Configuration complete" << endl;
+
 }
 
-void CESolver::compute_equilibrium(double rho, double e) {
+void CESolver::compute_equilibrium_T(double e, double rho) {
     
+    gas.V = 1.0 / rho;
+    gas.T = 3000.0;
+
+    int iteration = 0;
+
+    vector<double> J(J_SIZE * J_SIZE), F(J_SIZE), DELTA(J_SIZE), corr_vars(J_SIZE); 
+
+    double N_sum  = 0.0;
+    for (int j = 0; j < NS; ++j) N_sum += gas.X0[j];
+    for (int j = 0; j < NS; ++j) {
+        gas.N[j] = N_sum / NS;
+        corr_vars[j] = 
+    }
+
+    while (iteration < 25) {
+
+        NASA_fits();
+        mu_task;
+
+        for (MTask FN : matrix_tasks) 
+            FN(J.data(), F.data(), gas);
+
+        matrix_divide(J.data(), F.data(), DELTA.data(), J_SIZE, 1);
+
+        iteration++;
+    }
 
 
 
-
+    cout << "-- Equilibrium computed" << endl;
 }
 
 
@@ -173,14 +204,6 @@ void CESolver::compute_formation_enthalpies() {
     gas.hf.back() = 0.0;     
 }
 
-void CESolver::compute_mu() {
-
-    for (int j = 0; j < NS; ++j) {
-        gas.mu_RT[j] = 
-    }
-
-}
-
 void CESolver::compute_molar_fractions() {
 
     vector<double> dx(J_SIZE, 0.0), F(J_SIZE, 0.0), J(J_SIZE * J_SIZE, 0.0); 
@@ -190,34 +213,33 @@ void CESolver::compute_molar_fractions() {
     bool converged = false;
 
     while (!converged) {
-
-        (this->*form_system)(J.data(), F.data());        
+     
         matrix_divide(J.data(), F.data(), dx.data(), J_SIZE, 1);
 
         // ---- compute delta ln(N_j) for each species
-        for (int j = 0; j < NSP; ++j) {
+        for (int j = 0; j < NS; ++j) {
 
             RH_sum = 0.0;
-            for (int i = 0; i < NEL; ++i){
-                RH_sum += gas.a[i * NSP + j] * dx[i];
+            for (int i = 0; i < NE; ++i){
+                RH_sum += gas.a[i * NS + j] * dx[i];
             }
 
-            dln[j] = dx[NEL] + RH_sum - g[j];
+            dln[j] = dx[NE] + RH_sum - g[j];
         }
 
-        dln[NSP] = dx[NEL];
+        dln[NS] = dx[NE];
 
         // ---- find damping coefficient for update
         e = find_damping();
        
 
         // ---- apply damped update
-        for (int j = 0; j < NSP; ++j) {
+        for (int j = 0; j < NS; ++j) {
             lnN_new[j] = lnN_old[j] + e * dln[j];
             N[j]       = exp(lnN_new[j]);
         }
-        lnN_new[NSP] = lnN_old[NSP] + e * dln[NSP];   // total
-        N[NSP]       = exp(lnN_new[NSP]);
+        lnN_new[NS] = lnN_old[NS] + e * dln[NS];   // total
+        N[NS]       = exp(lnN_new[NS]);
 
         // ---- check convergence and set old = new    
         converged = check_convergence(); 
@@ -227,8 +249,8 @@ void CESolver::compute_molar_fractions() {
 
     cout << "-- Iterations: " << iteration << endl;
 
-    for (int i = 0; i < NSP; ++i) {
-            gas.X[i] = N[i]/N[NSP];
+    for (int i = 0; i < NS; ++i) {
+            gas.X[i] = N[i]/N[NS];
     }
 
     compute_mass_fractions();
@@ -237,11 +259,11 @@ void CESolver::compute_molar_fractions() {
 void CESolver::compute_mass_fractions() {
 
         gas.MW = 0.0;
-        for (int i = 0; i < NSP; ++i) {
+        for (int i = 0; i < NS; ++i) {
                 gas.MW += gas.X[i] * gas.species[i].mw;
         }
 
-        for (int i = 0; i < NSP; ++i) {
+        for (int i = 0; i < NS; ++i) {
                 gas.Y[i] = (gas.X[i] * gas.species[i].mw) / gas.MW;
         }
 }
@@ -259,220 +281,34 @@ void CESolver::display_gas_properties() {
     cout << setw(30) << "Mixture gamma: " << gas.gamma << endl;
     cout << setw(30) << "Mixture MW: " << gas.MW << " [g/mol]" << endl;
 
-    if (gas.perf_flag) return;
 
     cout << endl << setw(67) << "====: Species Molar Fractions :==== " << endl;
-    for (int i = 0; i < NSP; ++i) {
+    for (int i = 0; i < NS; ++i) {
         cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.X[i] << "\t";
         if ((i + 1) % 4 == 0) cout << endl;
     }
 
     cout << endl << endl << setw(67) <<  "====: Species Mass Fractions :==== " << endl;
-    for (int i = 0; i < NSP; ++i) {
+    for (int i = 0; i < NS; ++i) {
         cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
         if ((i + 1) % 4 == 0) cout << endl;
     }
-}
-
-void CESolver::plot_concentrations_for_T_range() {
-
-
-    // Buffers to hold (T, fractions...) so we can write Tecplot zones with correct I count
-    std::vector<std::vector<double>> mass_rows;   // each row: [T, Y1, Y2, ...]
-    std::vector<std::vector<double>> molar_rows;  // each row: [T, X1, X2, ...]
-
-    int counter = 0;
-
-    int ni = 194;
-
-    for (int i = 0; i < ni; ++i) {
-        double T = 500.0 + static_cast<double>(i) * 100.0;
-        
-        compute_equilibrium_TP(T, 101325.0);
-
-        // Build a row for mass fractions
-        std::vector<double> mass_row;
-        mass_row.reserve(NSP + 1);
-        mass_row.push_back(gas.T);
-        for (int i = 0; i < NSP; ++i) mass_row.push_back(gas.Y[i]);
-        mass_rows.push_back(std::move(mass_row));
-
-        // Build a row for molar fractions
-        std::vector<double> molar_row;
-        molar_row.reserve(NSP + 1);
-        molar_row.push_back(gas.T);
-        for (int i = 0; i < NSP; ++i) molar_row.push_back(gas.X[i]);
-        molar_rows.push_back(std::move(molar_row));
-
-        counter++;
-    }
-
-    // Write Tecplot file with two zones
-    std::ofstream tec("concentrations_tecplot.dat");
-    tec << "TITLE = \"Equilibrium concentrations vs Temperature\"\n";
-
-    // VARIABLES line: T plus each species (same for both zones)
-    tec << "VARIABLES = \"T\"";
-    for (int i = 0; i < NSP; ++i) tec << ", \"" << gas.species[i].name << "\"";
-    tec << "\n";
-
-    tec << std::scientific << std::setprecision(8);
-
-    // ---- ZONE 1: Mass fractions ----
-    tec << "ZONE T=\"Mass Fractions\", I=" << ni
-        << ", F=POINT\n";
-    for (const auto& row : mass_rows) {
-        for (size_t j = 0; j < row.size(); ++j) {
-            if (j) tec << ' ';
-            tec << row[j];
-        }
-        tec << '\n';
-    }
-
-    // ---- ZONE 2: Molar fractions ----
-    tec << "ZONE T=\"Molar Fractions\", I=" << static_cast<int>(molar_rows.size())
-        << ", F=POINT\n";
-    for (const auto& row : molar_rows) {
-        for (size_t j = 0; j < row.size(); ++j) {
-            if (j) tec << ' ';
-            tec << row[j];
-        }
-        tec << '\n';
-    }
-
-    tec.close();
-}
-
-void CESolver::form_system_ions(double* J, double* F) {
-
-        for (int i = NSP; i < J_SIZE; ++i) {
-            X[i] = 0.0;
-        } 
-
-        for (int i = 0; i < NSP; ++i) {
-
-            J[i * J_SIZE + i] = 1.0;  // Identity part
-
-            for (int k = 0; k < NEL; ++k) {
-                J[i * J_SIZE + NSP + k] = -gas.a[k * NSP + i];  // -a[k][i] 
-            }
-
-            J[i * J_SIZE + J_SIZE - 1] = -gas.species[i].q; 
-
-        }       
-
-        // Row 10–12: nitrogen, oxygen, argon atomic balance
-        for (int k = 0; k < NEL; ++k) {
-            for (int j = 0; j < NSP; ++j) {
-                J[(NSP + k) * J_SIZE + j] = gas.a[k * NSP + j] * X[j];  // a[k][j] * X[j]
-            }
-        // last 4 entries (cols 10–13) remain 0
-        }
-
-        // Row 13: charge neutrality
-        for (int j = 0; j < NSP; ++j) {
-            J[(J_SIZE - 1) * J_SIZE + j] = gas.species[j].q * X[j];
-        }
-        // last 4 entries of row 13 are 0
-
-        for (int i = 0; i < NSP; ++i) {
-            double Xi_safe = max(X[i], 1e-10); // Protect log from zero  
-            F[i] = -(gas.mu0[i] + gcon * gas.T * log(Xi_safe * gas.p / 100000.0)) / (gcon * gas.T);
-        }
-
-        for (int i = 0; i < NEL; ++i) {
-            double sum = 0.0;
-            for (int j = 0; j < NSP; ++j) sum += gas.a[i * NSP + j] * X[j];
-            F[NSP + i] = gas.b[i] - sum;
-        }
-
-        double sum = 0.0;
-        for (int i = NSP - NION; i < NSP; ++i) sum += X[i] * gas.species[i].q;
-        F[J_SIZE - 1] = -sum;
-}
-
-void CESolver::form_system_neut(double* J, double* F) {
-
-        vector<double> akj_N(NSP);
-        double asum, gsum, stoich_sum, Nsum;
-        double N_safe;
-
-        double pref = 100000.0;
-
-        for (int j = 0; j < NSP; ++j) {
-            N_safe = max(N[j], 1e-10); // Protect log from zero
-            g[j] = log(gas.p/pref * N_safe) + gas.mu0[j] / (gcon * gas.T);
-        }
-
-        // Loop through rows of Jacobian matrix
-        for (int k = 0; k < NEL; ++k) {
-
-            asum = 0.0;
-            gsum = 0.0;
-
-            for (int j = 0; j < NSP; ++j) {
-                akj_N[j] = gas.a[k * NSP + j] * N[j];
-                asum += akj_N[j];
-            }
-
-            // Loop through columns of row k for pi_i solution vector.
-            for (int i = 0; i < NEL; ++i) {
-
-                stoich_sum = 0.0;
-                for (int j = 0; j < NSP; ++j) {
-                    stoich_sum += akj_N[j] * gas.a[i * NSP + j];
-                }
-
-                J[k * J_SIZE + i] = stoich_sum;
-            }
-
-            J[k * J_SIZE + NEL] = asum;
-
-            // Fill RHS vector.
-            for (int j = 0; j < NSP; ++j) 
-                gsum += akj_N[j] * g[j];
-            
-            F[k] = gas.b[k] - asum + gsum;
-        }
-
-        gsum = 0.0;
-        Nsum = 0.0;
-
-        for (int j = 0; j < NSP; ++j) {
-            Nsum += N[j];
-            gsum += N[j] * g[j];
-        }
-
-        for (int i = 0; i < NEL; ++i) {
-            
-            asum = 0.0;
-
-            for (int j = 0; j < NSP; ++j) {
-                asum += gas.a[i * NSP + j] * N[j];
-            }
-
-            J[NEL * J_SIZE + i] = asum;
-        }
-
-        J[NEL * J_SIZE + NEL] = Nsum - N[NSP];
-        F[NEL] = N[NSP] - Nsum + gsum;
-
 }
 
 bool CESolver::check_convergence() {
 
     double sum = 0.0, check, tol = 0.5e-5;
 
-    for (int j = 0; j < NSP; ++j) 
+    for (int j = 0; j < NS; ++j) 
         sum += N[j];
     
 
-    for (int j = 0; j < NSP; ++j) {
+    for (int j = 0; j < NS; ++j) {
         check = N[j] * fabs(dln[j]) / sum;
         if (check > tol) return false;
     }
 
-    if (N[NSP] * fabs(dln[NSP]) / sum > tol)
+    if (N[NS] * fabs(dln[NS]) / sum > tol)
         return false;
 
     return true;
@@ -484,17 +320,17 @@ double CESolver::find_damping() {
 
      // ---- e1
     double maxAbs_dlnj = 0.0;
-    for (int j = 0; j < NSP; ++j)
+    for (int j = 0; j < NS; ++j)
         maxAbs_dlnj = max(maxAbs_dlnj, abs(dln[j]));
-    double e1 = 2.0 / max(5.0 * abs(dln[NSP]), maxAbs_dlnj);
+    double e1 = 2.0 / max(5.0 * abs(dln[NS]), maxAbs_dlnj);
 
     // ---- e2 (min over eligible species)
     double e2 = 1.0;
     bool any = false;
-    for (int j = 0; j < NSP; ++j) {
-        double frac_log = log(max(N[j],1e-300) / max(N[NSP],1e-300)); // ln(Nj/N)
+    for (int j = 0; j < NS; ++j) {
+        double frac_log = log(max(N[j],1e-300) / max(N[NS],1e-300)); // ln(Nj/N)
         if (frac_log <= -SIZE && dln[j] >= 0.0) {
-            double den = dln[j] - dln[NSP];
+            double den = dln[j] - dln[NS];
             if (abs(den) > eps) {
                 double num = -frac_log - 9.2103404; // ln(1e4)
                 double cand = abs(num / den);

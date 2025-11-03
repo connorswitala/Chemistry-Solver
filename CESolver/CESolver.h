@@ -5,7 +5,6 @@
 #include "../energy_functions/functions.h"
 #include "../includes/math.h"
 
-using namespace std;
 using Task = void(*)(double*, double*, mix&);
 
 class CESolver {
@@ -17,7 +16,7 @@ class CESolver {
 
     CESolver(GasType& gastype, ConstraintType& contrainttype);                       // Constructor.
 
-    void compute_equilibrium(double rho, double e);     // All in one Equilibirum solver function
+    void compute_equilibrium_T(double rho, double e);     // All in one Equilibirum solver function
 
     void display_gas_properties();                      // Display results.
 
@@ -26,14 +25,13 @@ class CESolver {
     private:
 
 
-    vector<Task> = build_tasks();
-
     int T_flag; // Flags which set of NASA coefficients to use.
 
     int J_SIZE; // Size of solution vector in Newton Method.
 
     vector<MTask> matrix_tasks;
-    muTask mu_task;
+    gasTask mu_task;
+    NjTask Nj_task;
 
     int NS, NE, NI;
 
@@ -44,8 +42,6 @@ class CESolver {
     inline array<double, 7> temp_base(double T);    // Calculates Temperature functions for NASA poly.
 
     void NASA_fits();                               // Calculates H0, S0, and MU0.
-
-    void compute_mu();
 
     void compute_molar_fractions();                 // Newton Iteration to solve for concentrations.
 
@@ -59,10 +55,6 @@ class CESolver {
 
     void form_system_ions(double* J, double* F);
     void form_system_neut(double* J, double* F);
-
-    using systemptr = void (equilibrium::*)(double*, double*);
-
-    systemptr form_system = nullptr;
 
 };
 

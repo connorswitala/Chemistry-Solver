@@ -56,9 +56,9 @@ namespace energy{
         return tasks;   
     }
 
-    muTask build_mu_task(Context& cfg) {
+    gasTask build_mu_task(Context& cfg) {
         
-        muTask mu = nullptr;
+        gasTask mu = nullptr;
 
         switch(cfg.energy_type) {
 
@@ -70,7 +70,28 @@ namespace energy{
                 mu   = &gibbs::compute_mu;
             break;
         }
+
+        return mu;
     }
+
+    NjTask build_Nj_task(Context& cfg) {
+        
+        NjTask Nj = nullptr;
+
+        switch(cfg.energy_type) {
+
+            case::EnergyType::Helmholtz:
+                Nj   = &helm::return_Nj;
+            break;
+
+            case::EnergyType::Gibbs:
+                Nj   = &gibbs::return_Nj;
+            break;
+        }
+
+        return Nj;
+    }
+
 
     namespace gibbs {
 
@@ -91,6 +112,11 @@ namespace energy{
         }
 
         void form_S(double* J, double* F, mix& gas) {
+
+        }
+
+        void return_Nj(mix& gas){
+
 
         }
 
@@ -154,6 +180,12 @@ namespace energy{
         }
 
         void form_S(double* J, double* F, mix& gas) {
+
+        }
+
+        void return_Nj(){
+
+            
 
         }
 
