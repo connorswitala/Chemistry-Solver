@@ -125,7 +125,7 @@ namespace energy{
 
     namespace helm {
 
-        void compute_mu(mix& gas) {
+        inline void compute_mu(mix& gas) {
             double Rp = gcon/(10e-5);
 
             for (int j = 0; j < gas.NS; ++j) {
@@ -133,7 +133,10 @@ namespace energy{
             }
         }
 
-        void form_elemental(double* J, double* F, mix& gas) {
+        // This function forms the entries in J and F for the elemental contrains.
+        // It currently uses two if statements to check if it needs ions and T columns.
+        // ==== TENTATIVELY COMPLETED ====
+        inline void form_elemental(double* J, double* F, mix& gas) {
 
             int NS = gas.NS;
             int NE = gas.NE; 
@@ -142,9 +145,13 @@ namespace energy{
             double sum;
             double akj_N_sum;
 
+            int offset;
+
             vector<double> akj_N(NS);
 
             for (int k = 0; k < NE; ++k) {
+
+                offset = k * J_SIZE;
 
                 akj_N_sum = 0.0;
                 for (int j = 0; j < NS; ++j) {
@@ -159,7 +166,7 @@ namespace energy{
                         sum += akj_N[j] * gas.a[i * NCOEF + j];
                     };
 
-                    J[k * J_SIZE + i] = sum;
+                    J[offset + i] = sum;
                 }
 
                 sum = 0.0;
@@ -168,11 +175,62 @@ namespace energy{
                 }
 
                 F[k] = gas.b[k] - akj_N_sum + sum;
+
+                if (gas.HAS_IONS) {
+
+                    sum = 0.0;
+                    for (int j = 0; j < NS; ++j) 
+                        sum += akj_N[j] * gas.species[j].q;
+
+                    J[offset + NE] = sum;
+                }
+
+                if (gas.NEEDS_T) {
+
+                    int idx = NE + gas.HAS_IONS;
+
+                    sum = 0.0;
+                    for (int j = 0; j < NS; ++j) 
+                        sum += akj_N[j] * (gas.H0_RT[j] - 1.0);
+
+                    J[offset + idx] = sum;
+                }
+
             }
         }
 
         void form_charge(double* J, double* F, mix& gas) {
+            
+            vector<double> qj_Nj(gas.NS);
+            double qjNj_sum = 0.0, sum;
 
+            for (int j = 0; j < gas.NS; ++j) {
+                qj_Nj[j] = gas.species[j].q * gas.N[j]; 
+                qjNj_sum += qj_Nj[j];
+            }
+
+            for (int i = 0; i < gas.NE; ++i) {
+
+                sum = 0.0;
+                for (int j = 0; j < gas.NS; ++j) 
+                    sum += qj_Nj[j] * gas.a[i * gas.NE + j];
+                
+                J[gas.NE * gas.J_SIZE + i] = sum;
+            }
+
+            sum = 0.0;
+            for (int j = 0; j < gas.NS; ++j) 
+                sum += qj_Nj[j] * gas.species[j].q;
+
+            J[gas.NE * gas.J_SIZE + gas.NE] = sum;
+
+            sum = 0.0;
+            for (int j = 0; j < gas.NS; ++j) 
+                sum += qj_Nj[j] * (gas.mu_RT[j]);
+
+            J[gas.NE * gas.J_SIZE + gas.NE + 1] = sum - qjNj_sum;
+
+            if (gas.NEEDS_T) 
         }
 
         void form_U(double* J, double* F, mix& gas) {

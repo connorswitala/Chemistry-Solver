@@ -38,7 +38,7 @@ struct mix {
     double initial_moles, N_tot;
     vector<int> diatomic_list;
     vector<int> mono_list;
-    bool HAS_IONS;
+    bool HAS_IONS, NEEDS_T;
     Vector reactant_idx;
     Vector product_idx;
     Vector reactions;

@@ -33,14 +33,14 @@ namespace energy {
 
     namespace helm {
 
-        void compute_mu(mix& gas);
+        inline void compute_mu(mix& gas);
 
-        void form_charge(double* J, double* F, mix& gas);
-        void form_U(double* J, double* F, mix& gas);
-        void form_S(double* J, double* F, mix& gas);
-        void form_elemental(double* J, double* F, mix& gas);
+        inline void form_charge(double* J, double* F, mix& gas);
+        inline void form_U(double* J, double* F, mix& gas);
+        inline void form_S(double* J, double* F, mix& gas);
+        inline void form_elemental(double* J, double* F, mix& gas);
 
-        void return_Nj(mix& gas, double* DELTA);
+        inline void return_Nj(mix& gas, double* DELTA);
 
     }
 }
