@@ -9,9 +9,9 @@ class CESolver {
         
     public:
 
-    mix gas;        // Main object.
+    mix& gas;        // Main object.
 
-    CESolver(GasType& gastype, ConstraintType& contrainttype);                       // Constructor.
+    CESolver(mix& gas_in, ConstraintType& contrainttype);                       // Constructor.
 
     void display_gas_properties();                      // Display results.
 

@@ -1,32 +1,10 @@
 #include "CESolver.h"
 
 
-CESolver::CESolver(GasType& gastype, ConstraintType& constrainttype) {
+CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
 
     string energy;
     string contraint;
-
-    switch (gastype) {
-        case::GasType::AIR5:
-            gas = common_air::make_air5();
-            break;
-
-        case::GasType::AIR11:
-            gas = common_air::make_air11();
-            break;
-
-        case::GasType::AIR11_AR:
-            gas = common_air::make_air11_Ar();
-            break;
-
-        case::GasType::AIR13:
-            gas = common_air::make_air13();
-            break;
-
-        case::GasType::CREATE:
-            // Will need to be made.
-            break;
-    }
 
     switch (constrainttype) {
         case::ConstraintType::TP:
@@ -79,7 +57,7 @@ CESolver::CESolver(GasType& gastype, ConstraintType& constrainttype) {
 
     string ions;
     if (gas.HAS_IONS) ions = " and charge constraint enforced";
-    else ions = "and no charge constraint";
+    else ions = " and no charge constraint";
 
     cout << "-- Configuration complete. Using " << energy << " minimization with " << contraint << " held constant" << ions << endl << endl;
 

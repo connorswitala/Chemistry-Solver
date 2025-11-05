@@ -211,6 +211,35 @@ namespace common_air {
         -1,
     };
 
+    mix create_air_mix(GasType gastype) {
+        mix gas;
+        switch (gastype) {
+            case::GasType::AIR5:
+                gas = common_air::make_air5();
+                return gas;
+                break;
+
+            case::GasType::AIR11:
+                gas = common_air::make_air11();
+                return gas;
+                break;
+
+            case::GasType::AIR11_AR:
+                gas = common_air::make_air11_Ar();
+                return gas;
+                break;
+
+            case::GasType::AIR13:
+                gas = common_air::make_air13();
+                return gas;
+                break;
+
+            case::GasType::CREATE:
+                // Will need to be made.
+                break;
+        }
+    }
+
     mix make_air5() {
         mix air;
         air.species = {N2, O2, NO, N, O};
