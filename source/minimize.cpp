@@ -20,13 +20,13 @@ using namespace std;
 int main() {
 
 
-    GasType g = GasType::AIR5; 
-    ConstraintType c = ConstraintType::UV;
-
-    auto start = NOW;
+    GasType g           = GasType::AIR5; 
+    ConstraintType c    = ConstraintType::TP;
 
     CESolver solver(g, c);
-    solver.compute_equilibrium_T(1e5, 0.01);
+
+    auto start = NOW;
+    solver.compute_equilibrium(1e4, 1.0);
 
     auto end = NOW;
     auto duration = chrono::duration<double>(end - start).count();

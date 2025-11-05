@@ -3,6 +3,9 @@
 
 CESolver::CESolver(GasType& gastype, ConstraintType& constrainttype) {
 
+    string energy;
+    string contraint;
+
     switch (gastype) {
         case::GasType::AIR5:
             gas = common_air::make_air5();
@@ -27,92 +30,215 @@ CESolver::CESolver(GasType& gastype, ConstraintType& constrainttype) {
 
     switch (constrainttype) {
         case::ConstraintType::TP:
-            cfg.energy_type = EnergyType::Gibbs;
-            cfg.constraint_type = ConstraintType::TP;
-            cfg.NEEDS_T = false;
+            gas.NEEDS_T = false;
+            equilibrium = &compute_equilibrium_TP;
+            energy = "Gibbs";
+            contraint = "temperature and pressure";
             break;
 
         case::ConstraintType::HP:
-            cfg.energy_type = EnergyType::Gibbs;
-            cfg.constraint_type = ConstraintType::HP;
-            cfg.NEEDS_T = true;
+            gas.NEEDS_T = true;
+            equilibrium = &compute_equilibrium_HP;
+            energy = "Gibbs";
+            contraint = "enthalpy and pressure";
             break;
 
         case::ConstraintType::SP:
-            cfg.energy_type = EnergyType::Gibbs;
-            cfg.constraint_type = ConstraintType::SP;
-            cfg.NEEDS_T = true;
+            gas.NEEDS_T = true;
+            equilibrium = &compute_equilibrium_SP;
+            energy = "Gibbs";
+            contraint = "entropy and pressure";
             break;
 
         case::ConstraintType::TV:
-            cfg.energy_type = EnergyType::Helmholtz;
-            cfg.constraint_type = ConstraintType::TV;
-            cfg.NEEDS_T = false;
+            gas.NEEDS_T = false;
+            equilibrium = &compute_equilibrium_TV;
+            energy = "Helmholtz";
+            contraint = "temperature and volume";
             break;
 
         case::ConstraintType::UV:
-            cfg.energy_type = EnergyType::Helmholtz;
-            cfg.constraint_type = ConstraintType::UV;
-            cfg.NEEDS_T = true;
+            gas.NEEDS_T = true;
+            equilibrium = &compute_equilibrium_UV;
+            energy = "Helmholtz";
+            contraint = "internal energy and volume";
             break;
 
         case::ConstraintType::SV:
-            cfg.energy_type = EnergyType::Helmholtz;
-            cfg.constraint_type = ConstraintType::SV;
-            cfg.NEEDS_T = true;
+            gas.NEEDS_T = true;
+            equilibrium = &compute_equilibrium_SV;
+            energy = "Helmholtz";
+            contraint = "entropy and volume";
             break;
     }
 
-    if (gas.HAS_IONS) cfg.HAS_IONS = true;
-    else cfg.HAS_IONS = false;
-
-    matrix_tasks = energy::build_matrix_tasks(cfg); 
-    mu_task = energy::build_mu_task(cfg);
-    Nj_task = energy::build_Nj_task(cfg);
+    gas.NEEDS_T = cfg.NEEDS_T;
 
     NI = gas.NI;
     NS = gas.NS;
     NE = gas.NE;
-    J_SIZE = NE + gas.HAS_IONS + cfg.NEEDS_T;
+    J_SIZE = NE + gas.HAS_IONS + gas.NEEDS_T;
     gas.J_SIZE = J_SIZE;
 
-    cout << "-- Configuration complete" << endl;
+    string ions;
+    if (gas.HAS_IONS) ions = " and charge constraint enforced";
+    else ions = "and no charge constraint";
+
+    cout << "-- Configuration complete. Using " << energy << " minimization with " << contraint << " held constant" << ions << endl << endl;
 
 }
 
-void CESolver::compute_equilibrium_T(double e, double rho) {
+void CESolver::compute_equilibrium(double a, double b) {
+    (this->*equilibrium)(a, b);
+}
+
+inline void CESolver::compute_equilibrium_TV(double T, double V) {
     
-    gas.V = 1.0 / rho;
+    bool converged = false;
+
+    gas.V = V;
+    gas.T = T;
+
+    int iteration = 0;
+
+    vector<double> J(J_SIZE * J_SIZE), F(J_SIZE), DELTA(J_SIZE), DlnNj(NS); 
+    double sum;
+
+    double N_sum  = 0.0;
+    for (int j = 0; j < NS; ++j) 
+        N_sum += gas.X0[j];
+
+    for (int j = 0; j < NS; ++j) {
+        gas.N[j] = N_sum / NS;
+    }
+
+    NASA_fits();
+
+    while (!converged) {        
+
+        energy::helm::compute_mu(gas);
+        energy::helm::form_elemental(J.data(), F.data(), gas);
+        if (gas.HAS_IONS) energy::helm::form_charge(J.data(), F.data(), gas);
+
+        matrix_divide(J.data(), F.data(), DELTA.data(), J_SIZE, 1);
+
+        for (int j = 0; j < NS; ++j) {
+            sum = 0.0;
+            for (int i = 0; i < NE; ++i) {
+                sum += gas.a[i * NS + j] * DELTA[i];
+            }
+            DlnNj[j] = sum - gas.mu_RT[j];
+            if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE];
+        }
+    
+        for (int j = 0; j < NS; ++j) {
+            gas.N[j] *= exp(DlnNj[j]);
+        }
+        
+        converged = check_convergence(DlnNj.data());
+        iteration++;        
+    }
+
+
+        sum = 0.0;
+        for (int j = 0; j < NS; ++j) 
+            sum += gas.N[j];
+
+        for (int j = 0; j < NS; ++j) {
+            gas.X[j] = gas.N[j] / sum;
+            cout << gas.species[j].name << "\tX = " << gas.X[j] << endl;
+        }
+
+
+
+    cout << "-- Equilibrium computed in " << iteration << " iterations" << endl;
+}
+
+inline void CESolver::compute_equilibrium_UV(double U, double V) {
+    
+    bool converged = false;
+
+    gas.V = V;
+    gas.uo = U;
     gas.T = 3000.0;
 
     int iteration = 0;
 
-    vector<double> J(J_SIZE * J_SIZE), F(J_SIZE), DELTA(J_SIZE), corr_vars(J_SIZE); 
+    vector<double> J(J_SIZE * J_SIZE), F(J_SIZE), DELTA(J_SIZE), DlnNj(NS); 
+    double sum;
 
     double N_sum  = 0.0;
-    for (int j = 0; j < NS; ++j) N_sum += gas.X0[j];
+    for (int j = 0; j < NS; ++j) 
+        N_sum += gas.X0[j];
+
     for (int j = 0; j < NS; ++j) {
         gas.N[j] = N_sum / NS;
-        corr_vars[j] = 
     }
 
-    while (iteration < 25) {
+
+    while (!converged) {   
 
         NASA_fits();
-        mu_task;
+        
+        gas.up = 0.0;
+        for (int j = 0; j < NS; ++j) 
+            gas.up += gas.N[j] * (gas.H0_RT[j] - 1.0) * gcon * gas.T;
 
-        for (MTask FN : matrix_tasks) 
-            FN(J.data(), F.data(), gas);
+        energy::helm::compute_mu(gas);
+        energy::helm::form_elemental(J.data(), F.data(), gas);
+        if (gas.HAS_IONS) energy::helm::form_charge(J.data(), F.data(), gas);
+        energy::helm::form_U(J.data(), F.data(), gas);
 
         matrix_divide(J.data(), F.data(), DELTA.data(), J_SIZE, 1);
 
-        iteration++;
+        for (int j = 0; j < NS; ++j) {
+            sum = 0.0;
+            for (int i = 0; i < NE; ++i) {
+                sum += gas.a[i * NS + j] * DELTA[i];
+            }
+            DlnNj[j] = sum + (gas.H0_RT[j] - 1.0) * DELTA[J_SIZE - 1] - gas.mu_RT[j];
+            if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE];
+        }
+
+        gas.T *= exp(DELTA[J_SIZE - 1]);
+    
+        for (int j = 0; j < NS; ++j) {
+            gas.N[j] *= exp(DlnNj[j]);
+        }
+        
+        converged = check_convergence(DlnNj.data());
+        iteration++;        
     }
 
+        sum = 0.0;
+        for (int j = 0; j < NS; ++j) 
+            sum += gas.N[j];
 
+        for (int j = 0; j < NS; ++j) {
+            gas.X[j] = gas.N[j] / sum;
+            cout << "X[" << gas.species[j].name << "] = " << gas.X[j] << endl;
+        }
+        cout << "T = " << gas.T << endl;
 
-    cout << "-- Equilibrium computed" << endl;
+    cout << "-- Equilibrium computed in " << iteration << " iterations" << endl;
 }
+
+inline void CESolver::compute_equilibrium_SV(double S, double V) {
+    cout << "Not made yet" << endl;
+}   
+
+inline void CESolver::compute_equilibrium_TP(double T, double P) {
+    cout << "Not made yet" << endl;
+}
+
+inline void CESolver::compute_equilibrium_HP(double H, double P) {
+    cout << "Not made yet" << endl;
+}
+
+inline void CESolver::compute_equilibrium_SP(double S, double P) {
+    cout << "Not made yet" << endl;
+}
+
 
 
 inline void CESolver::findTRange() {
@@ -138,7 +264,7 @@ inline array<double, 7> CESolver::temp_base(double T) {
     return Ts;
 }
 
-void CESolver::NASA_fits() {
+inline void CESolver::NASA_fits() {
 
     // H(T) / RT = -a0 * T^(-2) + a1 * ln(T)/T + a2 + a3 * T/2 + a4 * T^2 / 3 + a5 * T^3/4 + a6 * T^4 / 5 + a7 / T
     // S(T) / R = -a0 * T^(-2)/2 - a1 / T + a2 * ln(T) + a3 * T + a4 * T^2 / 2 + a5 * T^3/3 + a6 * T^4 / 4 + a8
@@ -177,86 +303,12 @@ void CESolver::NASA_fits() {
                      + coeff[5] * Ts[5]
                      + coeff[6] * Ts[6];
 
-        gas.mu0_RT[j] = gas.H0_RT[j] - gas.S0_R[j];        
+        gas.mu0_RT[j] = gas.H0_RT[j] - gas.S0_R[j];     
     }
 
-    compute_formation_enthalpies();
 }
 
-void CESolver::compute_formation_enthalpies() {
-    
-    for (int i : gas.reactant_idx) {
-        gas.hf[i] = 0.0;
-    }
-    
-    int k = 0;
-    for (int i : gas.product_idx) {
-
-        double sum = 0.0;
-
-        for (int j = 0; j < gas.N_RE; ++j) {
-            sum += gas.reactions[k * gas.N_RE + j] * gas.H0_RT[gas.reactant_idx[j]];
-        }
-        gas.hf[i] = (gas.H0_RT[i] - sum) * 1000.0 / gas.species[i].mw;
-        k++;
-    }
-
-    gas.hf.back() = 0.0;     
-}
-
-void CESolver::compute_molar_fractions() {
-
-    vector<double> dx(J_SIZE, 0.0), F(J_SIZE, 0.0), J(J_SIZE * J_SIZE, 0.0); 
-
-    int iteration = 0;    
-    double RH_sum, e;
-    bool converged = false;
-
-    while (!converged) {
-     
-        matrix_divide(J.data(), F.data(), dx.data(), J_SIZE, 1);
-
-        // ---- compute delta ln(N_j) for each species
-        for (int j = 0; j < NS; ++j) {
-
-            RH_sum = 0.0;
-            for (int i = 0; i < NE; ++i){
-                RH_sum += gas.a[i * NS + j] * dx[i];
-            }
-
-            dln[j] = dx[NE] + RH_sum - g[j];
-        }
-
-        dln[NS] = dx[NE];
-
-        // ---- find damping coefficient for update
-        e = find_damping();
-       
-
-        // ---- apply damped update
-        for (int j = 0; j < NS; ++j) {
-            lnN_new[j] = lnN_old[j] + e * dln[j];
-            N[j]       = exp(lnN_new[j]);
-        }
-        lnN_new[NS] = lnN_old[NS] + e * dln[NS];   // total
-        N[NS]       = exp(lnN_new[NS]);
-
-        // ---- check convergence and set old = new    
-        converged = check_convergence(); 
-        lnN_old = lnN_new;
-        iteration++;
-    }
-
-    cout << "-- Iterations: " << iteration << endl;
-
-    for (int i = 0; i < NS; ++i) {
-            gas.X[i] = N[i]/N[NS];
-    }
-
-    compute_mass_fractions();
-}
-
-void CESolver::compute_mass_fractions() {
+inline void CESolver::compute_mass_fractions() {
 
         gas.MW = 0.0;
         for (int i = 0; i < NS; ++i) {
@@ -268,7 +320,7 @@ void CESolver::compute_mass_fractions() {
         }
 }
 
-void CESolver::display_gas_properties() {
+inline void CESolver::display_gas_properties() {
 
 
     cout << endl << setw(30) << "Mixture Temperature: " << gas.T << " [K]" << endl;
@@ -295,55 +347,21 @@ void CESolver::display_gas_properties() {
     }
 }
 
-bool CESolver::check_convergence() {
+inline bool CESolver::check_convergence(double* dln) {
 
     double sum = 0.0, check, tol = 0.5e-5;
 
     for (int j = 0; j < NS; ++j) 
-        sum += N[j];
+        sum += gas.N[j];
     
 
     for (int j = 0; j < NS; ++j) {
-        check = N[j] * fabs(dln[j]) / sum;
+        check = gas.N[j] * fabs(dln[j]) / sum;
         if (check > tol) return false;
     }
-
-    if (N[NS] * fabs(dln[NS]) / sum > tol)
-        return false;
-
     return true;
 }
 
-double CESolver::find_damping() {
-
-    const double SIZE = -log(1e-8), eps = 1e-14;
-
-     // ---- e1
-    double maxAbs_dlnj = 0.0;
-    for (int j = 0; j < NS; ++j)
-        maxAbs_dlnj = max(maxAbs_dlnj, abs(dln[j]));
-    double e1 = 2.0 / max(5.0 * abs(dln[NS]), maxAbs_dlnj);
-
-    // ---- e2 (min over eligible species)
-    double e2 = 1.0;
-    bool any = false;
-    for (int j = 0; j < NS; ++j) {
-        double frac_log = log(max(N[j],1e-300) / max(N[NS],1e-300)); // ln(Nj/N)
-        if (frac_log <= -SIZE && dln[j] >= 0.0) {
-            double den = dln[j] - dln[NS];
-            if (abs(den) > eps) {
-                double num = -frac_log - 9.2103404; // ln(1e4)
-                double cand = abs(num / den);
-                e2 = min(e2, cand);
-                any = true;
-            }
-        }
-    }
-    if (!any) e2 = 1.0;
-
-    // ---- final damping
-    return min(1.0, min(e1, e2));
-}
 
 
 
