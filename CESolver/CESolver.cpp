@@ -72,9 +72,6 @@ CESolver::CESolver(GasType& gastype, ConstraintType& constrainttype) {
             break;
     }
 
-    gas.NEEDS_T = cfg.NEEDS_T;
-
-    NI = gas.NI;
     NS = gas.NS;
     NE = gas.NE;
     J_SIZE = NE + gas.HAS_IONS + gas.NEEDS_T;

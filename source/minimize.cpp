@@ -4,29 +4,17 @@
 
 using namespace std;
 
-// int argc, char* argv[]
-
-// if (argc < 4) {
-//         cerr << "Usage: " << argv[0] << " <rho> <e> <gas_type>\n";
-//         return 1;
-//     }
-
-//     // convert command-line args to doubles
-//     double rho = atof(argv[1]);
-//     double e   = atof(argv[2]);
-//     string mix_type = argv[3];   
-
-
 int main() {
 
 
     GasType g           = GasType::AIR5; 
-    ConstraintType c    = ConstraintType::TP;
+    ConstraintType c    = ConstraintType::TV;
 
-    CESolver solver(g, c);
+    CESolver CE(g, c);
+    mix gas;
 
     auto start = NOW;
-    solver.compute_equilibrium(1e4, 1.0);
+    CE.compute_equilibrium(1e4, 1.0);
 
     auto end = NOW;
     auto duration = chrono::duration<double>(end - start).count();
