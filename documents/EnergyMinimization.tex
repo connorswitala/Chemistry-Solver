@@ -1,49 +1,62 @@
-\documentclass[8pt]{article}
-\usepackage{graphicx}
+\documentclass[10pt]{article}
+
+% Core math & graphics
 \usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[dvipsnames]{xcolor} % load once, with options
+
+% Floats, tables, layout
 \usepackage{wrapfig}
 \usepackage{tabularx}
 \usepackage{array}
-\usepackage{gensymb}
-\usepackage{geometry}
-\usepackage{nomencl}
-\usepackage{multicol}
-\numberwithin{equation}{section}
- \usepackage[labelfont=bf]{caption}
- \geometry{
- total={170mm,257mm},
- bottom=25mm,
- top=20mm,
- left = 15mm,
- right = 15mm}
-\usepackage{graphicx}
-\usepackage{subcaption}
-\usepackage[export]{adjustbox}
-\usepackage{setspace}
-\usepackage{listings}
-\usepackage{xcolor}
-\definecolor{maroon}{RGB}{128, 0, 0}
-\usepackage{lipsum} 
-\usepackage[]{mdframed}
-\usepackage{tikz}
-\usepackage{url}
-\usepackage[dvipsnames]{xcolor}
-\usepackage{marginnote}
 \usepackage{booktabs}
 
+% Units/symbol helpers (see notes about gensymb below)
+\usepackage{gensymb} % OK; if conflicts with \micro or \perthousand, consider siunitx
 
+% Page geometry — choose margins OR total area (here: margins)
+\usepackage[
+  top=20mm,
+  bottom=25mm,
+  left=15mm,
+  right=15mm
+]{geometry}
+
+% Captions/subcaptions (caption options applied before subcaption)
+\usepackage[labelfont=bf]{caption}
+\usepackage{subcaption}
+
+% Misc utilities
+\usepackage[export]{adjustbox}
+\usepackage{setspace}
+\usepackage{listings} % load once
+\usepackage{mdframed}
+\usepackage{tikz}
+\usepackage{url}
+\usepackage{marginnote}
 \usepackage{csquotes}
-\usepackage{listings}
-\usepackage{ulem}
+\usepackage[normalem]{ulem} % keep \emph as italics
+\usepackage{multicol}
+\usepackage{lipsum}
 \setlength{\parindent}{20pt}
+
+% Number equations by section
+\numberwithin{equation}{section}
+
+% Nomenclature
+\usepackage[intoc]{nomencl}
+\makenomenclature
+
+% Hyperlinks (keep near the end)
 \usepackage{hyperref}
 \hypersetup{
-    colorlinks,
-    citecolor=black,
-    filecolor=black,
-    linkcolor=black,
-    urlcolor=black
+  colorlinks,
+  citecolor=black,
+  filecolor=black,
+  linkcolor=black,
+  urlcolor=black
 }
+
 
 
 
@@ -56,7 +69,6 @@
 \tableofcontents
 \newpage
 
-\makenomenclature
 \nomenclature{$\mathcal{N}$}{Total number of moles in the system}
 \nomenclature{$\mathcal{N}_j$}{Number of moles of species $j$ in the system}
 \nomenclature{$\mathcal{L}$}{The Lagrangian}
@@ -70,7 +82,7 @@
 \nomenclature{$q_j$}{Charge of species $j$ (0 for neutrals, 1 for ions, -1 for electrons)}
 \nomenclature{$V$}{Volume ($m^3$)}
 \nomenclature{$\rho$}{Density ($kg/m^3$}
-\nomenclature{MW_j}{Molecular weight of species $j$}
+\nomenclature{$MW_j$}{Molecular weight of species $j$}
 \nomenclature{$\lambda$}{Lagrange multiplier}
 \nomenclature{$\mu_j$}{Chemical potential of species $j$}
 \nomenclature{$\mu_j^\circ$}{Standard state chemical potential of species $j$}
@@ -385,14 +397,7 @@ By substituting this into equations [\ref{Hdpi}] - [\ref{HdlnT}], we can shrink 
 \end{equation}
 
 
-There will be NE number of equations $\ref{redH1}$, and one of both $\ref{redH2}$ and \ref{redH3}. 
-
-\begin{equation}
-    \begin{bmatrix} 
-    \textcolor{red}{\sum_{j=1}^\text{NS} a_{1j} a_{1j} \mathcal{N}_j} & \textcolor{red}{\sum_{j=1}^\text{NS} a_{1j} a_{2j} & 2
-    \end{bmatrix}
-\end{equation}
-
+There will be NE number of equations $\ref{redH1}$, and one of both $\ref{redH2}$ and $\ref{redH3}$. 
 
 \subsection{Useful Relationships}
 
@@ -408,7 +413,7 @@ There will be NE number of equations $\ref{redH1}$, and one of both $\ref{redH2}
     \frac{U_j^\circ}{\hat{R}T} = \frac{H_j^\circ}{\hat{R}T} - 1
 \end{equation}
 
-\section{Standard State $\mu_j^0$ Derivatives}
+\section{Standard State Chemical Potential Derivatives}
 
 Some important derivatives are derived here. First, we state a chain rule identity that is very useful:
 

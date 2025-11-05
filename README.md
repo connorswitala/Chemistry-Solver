@@ -65,3 +65,7 @@ This function will display every thermodynamic quantity you may need in `mix gas
 ## Sample Code
 
 Code is already setup to test the functionality of this repository. To check it out, [open minimize.cpp](./source/minimize.cpp).
+
+## Documentation
+
+There is scientific documentation on the formulation of the equations being used and in what functions they shopw up. It is written in Latex and can be found [here](./documents/EnergyMinimization.tex).
