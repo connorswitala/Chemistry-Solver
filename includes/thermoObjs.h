@@ -19,24 +19,23 @@ struct SpeciesInfo {
 
 struct mix {
 
-    vector<SpeciesInfo> species;
+    // ======================: Displayed properties in this box :=======================
+    //                                                                                  |
+    vector<SpeciesInfo> species;            // Vector of Species                        |
+    int NS, NE;                             // Sizes                                    |
+    double R, gamma, cp, cv, MW, Pr, k, D;  // Thermodynamic properties of mixture.     |
+    double e, rho, T, p, V;                 // Thermodynamic state variables            |
+    Vector Y, X;                            // Mass and mole fractions.                 |
+    //                                                                                  |
+    // =================================================================================
 
-    int NS, NE;                         // Sizes
     Vector H0_RT, S0_R, mu0_RT, CP0_R;  // NASA polynomial
-    Vector N, mu_RT;                    // Current solution for number of moles as well as chemical potential.
-
-    int J_SIZE; // Size of solution vector.
-
-    double R, gamma, cp, cv, MW, Pr, k, D;  // Thermodynamic properties of mixture.
-    double e, rho, T, p, V;                 // Thermodynamic state variables
-
-    double up, hp, sp, uo, ho, so; // Used for specification of enthalpy, internal energy, and entropy.
-    
-    Vector Y, X;                    // Mass and mole fractions.
+    double up, hp, sp, uo, ho, so;  // Used for specification of enthalpy, internal energy, and entropy.
     Vector X0;                      // Initial Moles of air.
     Vector a, b;                    // Stoichiometric coefficients / number of moles of element i 
-
-    bool HAS_IONS, NEEDS_T;         // Booleans used in solver.
+    Vector N, mu_RT;                // Current solution for number of moles as well as chemical potential.
+    int J_SIZE;                     // Size of solution vector.
+    bool HAS_IONS, NEEDS_T;         // Booleans used in solver, stores here for passing to function.
 };
 
 #endif
