@@ -1,10 +1,8 @@
 # Chemical Equilibrium Solver
 
-This repo is for solving for chemical equilibrium thermodynamics. It is currently under development to include Helmholtz and Gibbs energy minimization. 
+This repository is for solving chemical equilibrium thermodynamics. It is currently under development to include Helmholtz and Gibbs energy minimization. 
 
-## How to run.
-
-
+## How to run
 
 ### Composition
 
@@ -63,3 +61,7 @@ CE.print_properties(gas);
 ```
 
 This function will display every thermodynamic quantity you may need in `mix gas`. The quantities that are printed in this function are denoted in the structure definition in 'thermoObjs.h'
+
+## Sample Code
+
+Code is already setup to test the functionality of this repository. To check it out, [open minimize.cpp](./source/minimize.cpp).
