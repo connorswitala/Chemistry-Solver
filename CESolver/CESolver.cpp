@@ -1,0 +1,358 @@
+#include "CESolver.h"
+
+
+CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
+
+    string energy;
+    string contraint;
+
+    switch (constrainttype) {
+        case::ConstraintType::TP:
+            gas.NEEDS_T = false;
+            equilibrium = &compute_equilibrium_TP;
+            energy = "Gibbs";
+            contraint = "temperature and pressure";
+            break;
+
+        case::ConstraintType::HP:
+            gas.NEEDS_T = true;
+            equilibrium = &compute_equilibrium_HP;
+            energy = "Gibbs";
+            contraint = "enthalpy and pressure";
+            break;
+
+        case::ConstraintType::SP:
+            gas.NEEDS_T = true;
+            equilibrium = &compute_equilibrium_SP;
+            energy = "Gibbs";
+            contraint = "entropy and pressure";
+            break;
+
+        case::ConstraintType::TV:
+            gas.NEEDS_T = false;
+            equilibrium = &compute_equilibrium_TV;
+            energy = "Helmholtz";
+            contraint = "temperature and volume";
+            break;
+
+        case::ConstraintType::UV:
+            gas.NEEDS_T = true;
+            equilibrium = &compute_equilibrium_UV;
+            energy = "Helmholtz";
+            contraint = "internal energy and volume";
+            break;
+
+        case::ConstraintType::SV:
+            gas.NEEDS_T = true;
+            equilibrium = &compute_equilibrium_SV;
+            energy = "Helmholtz";
+            contraint = "entropy and volume";
+            break;
+    }
+
+    NS = gas.NS;
+    NE = gas.NE;
+    J_SIZE = NE + gas.HAS_IONS + gas.NEEDS_T;
+    gas.J_SIZE = J_SIZE;
+
+    string ions;
+    if (gas.HAS_IONS) ions = " and charge constraint enforced";
+    else ions = " and no charge constraint";
+
+    cout << "-- Configuration complete. Using " << energy << " minimization with " << contraint << " held constant" << ions << endl << endl;
+
+}
+
+void CESolver::compute_equilibrium(double a, double b) {
+    (this->*equilibrium)(a, b);
+}
+
+inline void CESolver::compute_equilibrium_TV(double T, double V) {
+    
+    bool converged = false;
+
+    gas.V = V;
+    gas.T = T;
+
+    int iteration = 0;
+
+    vector<double> J(J_SIZE * J_SIZE), F(J_SIZE), DELTA(J_SIZE), DlnNj(NS); 
+    double sum;
+
+    double N_sum  = 0.0;
+    for (int j = 0; j < NS; ++j) 
+        N_sum += gas.X0[j];
+
+    for (int j = 0; j < NS; ++j) {
+        gas.N[j] = N_sum / NS;
+    }
+
+    NASA_fits();
+
+    while (!converged) {        
+
+        energy::helm::compute_mu(gas);
+        energy::helm::form_elemental(J.data(), F.data(), gas);
+        if (gas.HAS_IONS) energy::helm::form_charge(J.data(), F.data(), gas);
+
+        matrix_divide(J.data(), F.data(), DELTA.data(), J_SIZE, 1);
+
+        for (int j = 0; j < NS; ++j) {
+            sum = 0.0;
+            for (int i = 0; i < NE; ++i) {
+                sum += gas.a[i * NS + j] * DELTA[i];
+            }
+            DlnNj[j] = sum - gas.mu_RT[j];
+            if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE];
+        }
+    
+        for (int j = 0; j < NS; ++j) {
+            gas.N[j] *= exp(DlnNj[j]);
+        }
+        
+        converged = check_convergence(DlnNj.data());
+        iteration++;        
+    }
+
+
+        sum = 0.0;
+        for (int j = 0; j < NS; ++j) 
+            sum += gas.N[j];
+
+        for (int j = 0; j < NS; ++j) {
+            gas.X[j] = gas.N[j] / sum;
+            cout << gas.species[j].name << "\tX = " << gas.X[j] << endl;
+        }
+
+
+
+    cout << "-- Equilibrium computed in " << iteration << " iterations" << endl;
+}
+
+inline void CESolver::compute_equilibrium_UV(double U, double V) {
+    
+    bool converged = false;
+
+    gas.V = V;
+    gas.uo = U;
+    gas.T = 3000.0;
+
+    int iteration = 0;
+
+    vector<double> J(J_SIZE * J_SIZE), F(J_SIZE), DELTA(J_SIZE), DlnNj(NS); 
+    double sum;
+
+    double N_sum  = 0.0;
+    for (int j = 0; j < NS; ++j) 
+        N_sum += gas.X0[j];
+
+    for (int j = 0; j < NS; ++j) {
+        gas.N[j] = N_sum / NS;
+    }
+
+
+    while (!converged) {   
+
+        NASA_fits();
+        
+        gas.up = 0.0;
+        for (int j = 0; j < NS; ++j) 
+            gas.up += gas.N[j] * (gas.H0_RT[j] - 1.0) * gcon * gas.T;
+
+        energy::helm::compute_mu(gas);
+        energy::helm::form_elemental(J.data(), F.data(), gas);
+        if (gas.HAS_IONS) energy::helm::form_charge(J.data(), F.data(), gas);
+        energy::helm::form_U(J.data(), F.data(), gas);
+
+        matrix_divide(J.data(), F.data(), DELTA.data(), J_SIZE, 1);
+
+        for (int j = 0; j < NS; ++j) {
+            sum = 0.0;
+            for (int i = 0; i < NE; ++i) {
+                sum += gas.a[i * NS + j] * DELTA[i];
+            }
+            DlnNj[j] = sum + (gas.H0_RT[j] - 1.0) * DELTA[J_SIZE - 1] - gas.mu_RT[j];
+            if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE];
+        }
+
+        gas.T *= exp(DELTA[J_SIZE - 1]);
+    
+        for (int j = 0; j < NS; ++j) {
+            gas.N[j] *= exp(DlnNj[j]);
+        }
+        
+        converged = check_convergence(DlnNj.data());
+        iteration++;        
+    }
+
+        sum = 0.0;
+        for (int j = 0; j < NS; ++j) 
+            sum += gas.N[j];
+
+        for (int j = 0; j < NS; ++j) {
+            gas.X[j] = gas.N[j] / sum;
+            cout << "X[" << gas.species[j].name << "] = " << gas.X[j] << endl;
+        }
+        cout << "T = " << gas.T << endl;
+
+    cout << "-- Equilibrium computed in " << iteration << " iterations" << endl;
+}
+
+inline void CESolver::compute_equilibrium_SV(double S, double V) {
+    cout << "Not made yet" << endl;
+}   
+
+inline void CESolver::compute_equilibrium_TP(double T, double P) {
+    cout << "Not made yet" << endl;
+}
+
+inline void CESolver::compute_equilibrium_HP(double H, double P) {
+    cout << "Not made yet" << endl;
+}
+
+inline void CESolver::compute_equilibrium_SP(double S, double P) {
+    cout << "Not made yet" << endl;
+}
+
+
+
+inline void CESolver::findTRange() {
+    if      (gas.T >= 200.0   && gas.T <= 1000.0)   T_flag = 0; 
+    else if (gas.T >  1000.0  && gas.T <= 6000.0)   T_flag = 1; 
+    else if (gas.T >  6000.0  && gas.T <= 20000.0)  T_flag = 2;
+    else T_flag = -1;
+}
+
+inline array<double, 7> CESolver::temp_base(double T) {
+
+    array<double, 7> Ts;
+    double T_inverse = 1/T;
+
+    Ts[0] = T_inverse * T_inverse;  // 1 / T^2
+    Ts[1] = T_inverse;  // 1 / T
+    Ts[2] = log(T);     // ln(T)
+    Ts[3] = T;          // T
+    Ts[4] = Ts[3] * T;  // T^2
+    Ts[5] = Ts[4] * T;  // T^3
+    Ts[6] = Ts[5] * T;  // T^4
+    
+    return Ts;
+}
+
+inline void CESolver::NASA_fits() {
+
+    // H(T) / RT = -a0 * T^(-2) + a1 * ln(T)/T + a2 + a3 * T/2 + a4 * T^2 / 3 + a5 * T^3/4 + a6 * T^4 / 5 + a7 / T
+    // S(T) / R = -a0 * T^(-2)/2 - a1 / T + a2 * ln(T) + a3 * T + a4 * T^2 / 2 + a5 * T^3/3 + a6 * T^4 / 4 + a8
+
+    findTRange();                           // Find the temperature range to use for NASA Polynomials
+    const auto Ts = temp_base(gas.T);       // Calculate Temperature variables.
+
+    for (int j = 0; j < NS; ++j) {
+
+        const auto& poly = gas.species[j].poly;
+        const double* coeff = &poly.at(T_flag * NCOEF);
+
+        gas.H0_RT[j] = - coeff[0] * Ts[0] 
+                   + coeff[1] * Ts[1] * Ts[2] 
+                   + coeff[2] 
+                   + 0.5 * coeff[3] * Ts[3] 
+                   + 0.333 * coeff[4] * Ts[4] 
+                   + 0.25 * coeff[5] * Ts[5] 
+                   + 0.2 * coeff[6] * Ts[6] 
+                   + coeff[7] * Ts[1];
+
+        gas.S0_R[j] = - 0.5 * coeff[0] * Ts[0] 
+                   - coeff[1] * Ts[1]
+                   + coeff[2] * Ts[2]
+                   + coeff[3] * Ts[3] 
+                   + 0.5 * coeff[4] * Ts[4] 
+                   + 0.333 * coeff[5] * Ts[5] 
+                   + 0.25 * coeff[6] * Ts[6] 
+                   + coeff[8];
+
+        gas.CP0_R[j] = coeff[0] * Ts[0]
+                     + coeff[1] * Ts[1]
+                     + coeff[2]
+                     + coeff[3] * Ts[3]
+                     + coeff[4] * Ts[4]
+                     + coeff[5] * Ts[5]
+                     + coeff[6] * Ts[6];
+
+        gas.mu0_RT[j] = gas.H0_RT[j] - gas.S0_R[j];     
+    }
+
+}
+
+inline void CESolver::compute_mass_fractions() {
+
+        gas.MW = 0.0;
+        for (int i = 0; i < NS; ++i) {
+                gas.MW += gas.X[i] * gas.species[i].mw;
+        }
+
+        for (int i = 0; i < NS; ++i) {
+                gas.Y[i] = (gas.X[i] * gas.species[i].mw) / gas.MW;
+        }
+}
+
+inline void CESolver::display_gas_properties() {
+
+
+    cout << endl << setw(30) << "Mixture Temperature: " << gas.T << " [K]" << endl;
+    cout << setw(30) << "Mixture Pressure: " << gas.p / 1000.0 << " [kPa]" << endl;
+    cout << setw(30) << "Mixture Density: " << gas.rho << " [kg/m^3]" << endl;
+    cout << setw(30) << "Mixture Internal Energy: " << gas.e / 1000.0 << " [kJ/kg]" << endl;
+    cout << setw(30) << "Mixture Gas Constant: " << gas.R << " [J/kg-K]" << endl;
+    cout << setw(30) << "Mixture cp: " << gas.cp << " [J/kg-K]" << endl;
+    cout << setw(30) << "Mixture cv: " << gas.cv << " [J/kg-K]" << endl;
+    cout << setw(30) << "Mixture gamma: " << gas.gamma << endl;
+    cout << setw(30) << "Mixture MW: " << gas.MW << " [g/mol]" << endl;
+
+
+    cout << endl << setw(67) << "====: Species Molar Fractions :==== " << endl;
+    for (int i = 0; i < NS; ++i) {
+        cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.X[i] << "\t";
+        if ((i + 1) % 4 == 0) cout << endl;
+    }
+
+    cout << endl << endl << setw(67) <<  "====: Species Mass Fractions :==== " << endl;
+    for (int i = 0; i < NS; ++i) {
+        cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
+        if ((i + 1) % 4 == 0) cout << endl;
+    }
+}
+
+inline bool CESolver::check_convergence(double* dln) {
+
+    double sum = 0.0, check, tol = 0.5e-5;
+
+    for (int j = 0; j < NS; ++j) 
+        sum += gas.N[j];
+    
+
+    for (int j = 0; j < NS; ++j) {
+        check = gas.N[j] * fabs(dln[j]) / sum;
+        if (check > tol) return false;
+    }
+    return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

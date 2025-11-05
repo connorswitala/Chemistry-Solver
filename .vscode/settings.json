@@ -52,6 +52,10 @@
         "variant": "cpp",
         "iomanip": "cpp",
         "sstream": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "cstring": "cpp",
+        "ratio": "cpp",
+        "fstream": "cpp",
+        "cinttypes": "cpp"
     }
 }
