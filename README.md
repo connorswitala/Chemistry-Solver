@@ -6,7 +6,7 @@ This repo is for solving for chemical equilibrium thermodynamics. It is currentl
 
 
 
-#### Composition
+### Composition
 
 Currently, there are four air compositions available and built into the code itself. These are accesible through the the use of the enum class `GasType::`. The four compositions are:
 
@@ -24,7 +24,7 @@ mix gas = common_air::create_air_mix(g);
 
 This creates an instance of type mix` named 'gas' for you to access. It is also passed into the equilibrium solver where its values are used / manipulated during the minimization process.
 
-#### Minimization Procedure
+### Minimization Procedure
 This code is set up to minimize either Gibbs or Helmholtz energies using the `CESolver` class. The method used is specified through the used of the enum class `ConstraintType::`. The usual constraints are:
 
 - `ConstrainType::TP` Minimization holds temperature (T) and pressure (P) constant.
@@ -40,7 +40,7 @@ minimization function and is called with `CESolver CE(gas, constraint)` Here, `g
 This function takes in two arguments that are alligned with the contraint type, e.g. if you have chosen `ConstraintType::TP`, then calling `compute_equilibrium(1000, 101325)` will assume that temperature T = 1000 K, 
 and pressure P = 101325 Pa. If you set c = `ConstraintType::UV`, then `compute_equilibrium(1e6, 0.1)` would set internal energy (U) to 1e6, and volume (V) to 0.1.
 
-#### Access to results.
+### Access to results.
 
 There are two ways to access the results of the minimization.
 
