@@ -31,4 +31,19 @@ This code is set up to minimize either Gibbs or Helmholtz energies using the `CE
 The `CESolver` constructor function automatically chooses which energy to minimize when it receives the constraint type. The constructor function creates a pointer to the correct
 minimization function and is called with `CESolver CE(g, c)` Here, `g` is the `GasType`, and `c` is the `ConstraintType`. This pointer is used in the public member function of `CESolver` named `compute_equilibrium`.
 This function takes in two arguments that are alligned with the contraint type, e.g. if you have chosen `ConstraintType::TP`, then calling `compute_equilibrium(1000, 101325)` will assume that temperature T = 1000 K, 
-and pressure P = 101325 Pa. If you set c = `ConstraintType::UV`, then `compute_equilibrium(1000, 101325)` would set internal energy (U) to 1000, and volume (V) to 101315.
+and pressure P = 101325 Pa. If you set c = `ConstraintType::UV`, then `compute_equilibrium(1000, 101325)` would set internal energy (U) to 1000, and volume (V) to 101325.
+
+#### Access to results.
+
+The CESolver type contains the a struct `mix` named `gas`. All results are stored in this type. Everything available to you in the struct `mix` is found in the header file "thermoObjs.h". You can access the variables you want by use
+of `CE.gas.<variable name>` (if your CESolver instance was named CE). If you want temperature printed, you would write
+
+`cout << CE.gas.T << endl;`
+
+Or for printing mass fractions of each species:
+
+```
+for (int j = 0; j < CE.gas.NS; ++j) {
+    cout << CE.gas.Y[j] << endl;
+}
+```
