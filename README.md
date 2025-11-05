@@ -29,4 +29,6 @@ This code is set up to minimize either Gibbs or Helmholtz energies using the `CE
 
 
 The `CESolver` constructor function automatically chooses which energy to minimize when it receives the constraint type. The constructor function creates a pointer to the correct
-minimization function. The class constructor is called with `CESolver CE(g, c)` Here, `g` is the `GasType`, and `c` is the `ConstraintType`. This pointer is used in the public member function of the class CESolver.
+minimization function and is called with `CESolver CE(g, c)` Here, `g` is the `GasType`, and `c` is the `ConstraintType`. This pointer is used in the public member function of `CESolver` named `compute_equilibrium`.
+This function takes in two arguments that are alligned with the contraint type, e.g. if you have chosen `ConstraintType::TP`, then calling `compute_equilibrium(1000, 101325)` will assume that temperature T = 1000 K, 
+and pressure P = 101325 Pa. If you set c = `ConstraintType::UV`, then `compute_equilibrium(1000, 101325)` would set internal energy (U) to 1000, and volume (V) to 101315.
