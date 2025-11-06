@@ -31,6 +31,7 @@ struct mix {
 
     Vector H0_RT, S0_R, mu0_RT, CP0_R;  // NASA polynomial
     double up, hp, sp, uo, ho, so;  // Used for specification of enthalpy, internal energy, and entropy.
+    double N_tot;
     Vector X0;                      // Initial Moles of air.
     Vector a, b;                    // Stoichiometric coefficients / number of moles of element i 
     Vector N, mu_RT;                // Current solution for number of moles as well as chemical potential.

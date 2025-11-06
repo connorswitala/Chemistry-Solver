@@ -19,6 +19,7 @@
   \item [{$h'$}]\begingroup Sum of contributions from each species towards enthalpy  constraint, i.g. $\sum_{j}^\text{NS} \mathcal{N}_j H_j^\circ$\nomeqref {0.0}\nompageref{2}
   \item [{$h_0'$}]\begingroup User-specified enthalpy\nomeqref {0.0}\nompageref{2}
   \item [{$H_j^\circ$}]\begingroup Standard state enthalpy of species $j$\nomeqref {0.0}\nompageref{2}
+  \item [{$MW_j$}]\begingroup Molecular weight of species $j$\nomeqref {0.0}\nompageref{2}
   \item [{$p_\text{ref}$}]\begingroup Reference temperature used to compute chemical potential\nomeqref {0.0}\nompageref{2}
   \item [{$q_j$}]\begingroup Charge of species $j$ (0 for neutrals, 1 for ions, -1 for electrons)\nomeqref {0.0}\nompageref{2}
   \item [{$T$}]\begingroup Temperature (K)\nomeqref {0.0}\nompageref{2}
@@ -26,6 +27,5 @@
   \item [{$u_0'$}]\begingroup User-specified internal energy\nomeqref {0.0}\nompageref{2}
   \item [{$U_j^\circ$}]\begingroup Standard state internal energy of species $j$\nomeqref {0.0}\nompageref{2}
   \item [{$V$}]\begingroup Volume ($m^3$)\nomeqref {0.0}\nompageref{2}
-  \item [{$MW_j$}]\begingroup Molecular weight of species $j$\nomeqref {0.0}\nompageref{2}
 
 \end{thenomenclature}

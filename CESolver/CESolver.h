@@ -13,7 +13,7 @@ class CESolver {
 
     CESolver(mix& gas_in, ConstraintType& contrainttype);                       // Constructor.
 
-    void display_gas_properties();                      // Display results.
+    void print_properties();                      // Display results.
 
     void plot_concentrations_for_T_range();
 

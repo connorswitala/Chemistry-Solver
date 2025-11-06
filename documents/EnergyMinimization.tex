@@ -118,13 +118,13 @@ There are two constraints that are used the most in both energy minimization pro
     \label{chargeconstraint}
 \end{equation}
 
-Since these are used in abundance for both procedures, their constrains are placed in the Lagrangian term. Other constraints (such specified volume, temperature, internal energy, and entropy) are given their rows in the Newton solve without addition into the Lagrangian. 
+Since these are used in abundance for both procedures, their constraints are placed in the Lagrangian term. Other constraints (such as specified volume, temperature, internal energy, and entropy) are given their rows in the Newton solve without addition into the Lagrangian. 
 
 \vspace{5mm} 
 
-Equation [$\ref{elementalconstraint}$] says that the number of moles of element $i$ must remain constant during the minimization process, as atoms can not be created or destroyed. $b_i^\circ$ is the number of moles of element $i$ before minimizing, and $a_{i,j}$ is the stoichiometric coefficient, e.g. how many atoms of element $i$ are in species $j$. 
+Equation [$\ref{elementalconstraint}$] says that the number of moles of element $i$ must remain constant during the minimization process, as atoms can not be created or destroyed without nuclear physics being involved. $b_i^\circ$ is the number of moles of element $i$ before minimizing, and $a_{ij}$ is the stoichiometric coefficient, i.e. how many atoms of element $i$ are in species $j$. 
 
-Equation [$\ref{chargeconstraint}$] says that the charge of the system must remain neutral, i.e., if cations are formed, than there must be an equal number of free lectrons in the gas to balance it out.
+Equation [$\ref{chargeconstraint}$] says that the charge of the system must remain neutral, i.e., if cations are formed, than there must be an equal number of free electrons in the gas to balance it out.
 
 \subsection{The Lagrangian}
 The Lagrangian is defined as;
@@ -145,7 +145,7 @@ A Newton-Raphson iterative procedure is used to minimize the energies. Since thi
     \label{newton}
 \end{equation}
 
-Here, $f(x)$ is the function that is being minimized. In the case of Gibbs and Helmholtz energy minimization, $f$ takes the form of $\partial \mathcal{L} / \partial x$, with $x$ being non-linear variables used to guide the convergence of the system. The non-linear correction variables are of the form $\Delta \ln \mathcal{N}_j$, $\Delta \ln\mathcal{N}$, $\Delta \ln T$, and $\pi_{i,q} = \Delta \pi_{i,q}$. For the last correction variable, it is argued that setting $\pi$ to 0 at the beginning of each update does not influence the solution for the non-reduced equations, so the $\Delta$ is dropped for that term. This will influence the form of the update equations, which will be talked about in due time.
+Here, $f(x)$ is the function that is being minimized. In the case of Gibbs and Helmholtz energy minimization, $f$ takes the form of $\partial \mathcal{L} / \partial x$, with $x$ being non-linear variables used to guide the convergence of the system. The non-linear correction variables are in the form $\Delta \ln \mathcal{N}_j$, $\Delta \ln \mathcal{N}$, $\Delta \ln T$, and $\pi_{i,q} = \Delta \pi_{i,q}$. For the last correction variable, it is argued that setting $\pi$ to 0 at the beginning of each update does not influence the solution for the non-reduced equations, so the $\Delta$ is dropped for that term. This will influence the form of the update equations, which will be talked about in due time.
 
 \subsection{Gibbs Minimization}
 
@@ -181,6 +181,13 @@ The contraints available for the Gibbs energy are:
 \item Hold enthalpy (H) and pressure (P) constant.
 \item Hold entropy (S) and pressure (P) constant.
 \end{itemize}
+
+For all Gibbs minimizations, we need the molar constraint:
+
+\begin{equation}
+    \sum_{j=1}^\text{NS} \mathcal{N}_j - \mathcal{N} = 0
+\end{equation}
+
 
 For (TP) minimization, only the elemental and charge (if present) constraints are necessary. For (HP) minimization, the constraint is defined by:
 
@@ -228,8 +235,9 @@ We now take the derivatives of $\mathcal{L}$ wrt $\mathcal{N}_j$, and each $\lam
 These three equations are our minimization functions. Through use of the aforementioned Newton-Raphson method, we can solve these equations. Constraint equations for enthalpy and entropy are:
 
 \begin{align}
-    f_4 &= \frac{h' - h_0'}{\hat{R}T} = \frac{\sum_{j=1}^\text{NS} \mathcal{N}_j H_j^\circ - h_0'}{\hat{R}T}
-    \\ f_5 &= \frac{s' - s_0'}{\hat{R}} = \frac{\sum_{j=1}^\text{NS} \mathcal{N}_j S_j - s_0'}{\hat{R}}
+    f_4 &= \sum_{j=1}^\text{NS} \mathcal{N}_j - \mathcal{N} = 0
+    \\ f_5 &= \frac{h' - h_0'}{\hat{R}T} = \frac{\sum_{j=1}^\text{NS} \mathcal{N}_j H_j^\circ - h_0'}{\hat{R}T}
+    \\ f_6 &= \frac{s' - s_0'}{\hat{R}} = \frac{\sum_{j=1}^\text{NS} \mathcal{N}_j S_j - s_0'}{\hat{R}}
 \end{align}
 
 \subsubsection{Derivatives of $f_1$}
@@ -248,7 +256,7 @@ Dividing through by $\hat{R}T$ and setting $\pi = -\lambda/\hat{R}T$ gives:
 \end{equation}
 
 
-We now need to take the partial derivatives of our functions wrt our non-linear variables as well as each $\pi$, and then multiple it by the correction variables. We start with equation \ref{f11}:
+We now need to take the partial derivatives of our functions wrt our non-linear variables as well as each $\pi$, and then multiple it by the correction variables.
 
 \begin{align}
     \frac{\partial f_1}{\partial[\ln{\mathcal{N}_j}]} \Delta\ln{\mathcal{N}_j} &= \Delta\ln{\mathcal{N}_j}
@@ -267,9 +275,9 @@ Combining these into the form of equation \ref{newton} gives
 Arguments are made that $\pi_i$ = 0 at the start of every iteration, so this equation becomes:
 
 
-\begin{equation}
+\begin{equation*}
     \boxed{\Delta\ln{\mathcal{N}_j} - \Delta \ln{\mathcal{N}} - \sum_{i=1}^\text{NE} a_{ij}\pi_i - q_j \pi_q -  \frac{H_j^\circ}{\hat{R}T} \Delta \ln T = -\frac{\mu_j}{\hat{R}T}}
-\end{equation}
+\end{equation*}
 
 There will be one of these equation for each species.  
 
@@ -285,15 +293,15 @@ There will be one of these equation for each species.
 
 Which gives:
 
-\begin{equation}
+\begin{equation*}
     \boxed{\sum_{j=1}^\text{NS} a_{ij} \mathcal{N}_j \Delta \ln \mathcal{N}_j = b_i^\circ - \sum_{j=1}^\text{NS} a_{ij} \mathcal{N}_j}
-\end{equation}
+\end{equation*}
 
 \subsubsection{Derivatives of $f_3$}
 
 \begin{align}
     \frac{\partial f_3}{\partial [\ln{\mathcal{N}_j}]} \Delta \ln \mathcal{N}_j &=  q_j \mathcal{N}_j \Delta\ln{\mathcal{N}_j}
-    \\ \frac{\partial f_3}{\partial [\ln \mathcal{N}]} \Delta\ln \mathcal{N}_j &= 0
+    \\ \frac{\partial f_3}{\partial [\ln \mathcal{N}]} \Delta\ln \mathcal{N} &= 0
     \\ \frac{\partial f_3}{\partial [\ln T]} &= 0
     \\ \frac{\partial f_3}{\partial [\pi_i]} \pi_i &= 0
     \\ \frac{\partial f_3}{\partial [\pi_q]} \pi_q &= 0
@@ -301,30 +309,118 @@ Which gives:
 
 Giving:
 
-\begin{equation}
+\begin{equation*}
     \boxed{\sum_{j=1}^\text{NS} q_j \mathcal{N}_j \Delta \ln \mathcal{N}_j = - \sum_{j=1}^\text{NS} q_i \mathcal{N}_j}
-\end{equation}
+\end{equation*}
 
 \subsubsection{Derivatives of $f_4$}
 
 \begin{align}
-    \frac{\partial f_4}{\partial [\ln{\mathcal{N}_j}]} \Delta \ln \mathcal{N}_j &=  
-    \\ \frac{\partial f_4}{\partial [\ln \mathcal{N}]} \Delta\ln \mathcal{N}_j &= 0
-    \\ \frac{\partial f_4}{\partial [\ln T]} &= 
+    \frac{\partial f_4}{\partial [\ln{\mathcal{N}_j}]} \Delta \ln \mathcal{N}_j &= \mathcal{N}_j \Delta \ln \mathcal{N}_j 
+    \\ \frac{\partial f_4}{\partial [\ln \mathcal{N}]} \Delta\ln \mathcal{N} &= -\mathcal{N} \Delta \ln \mathcal{N} 
+    \\ \frac{\partial f_4}{\partial [\ln T]} &= 0
     \\ \frac{\partial f_4}{\partial [\pi_i]} \pi_i &= 0
     \\ \frac{\partial f_4}{\partial [\pi_q]} \pi_q &= 0
 \end{align}
 
+\begin{equation}
+    \boxed{\sum_{j=1}^\text{NS} \mathcal{N}_j \Delta \ln \mathcal{N}_j - \mathcal{N} \Delta \ln \mathcal{N} = \mathcal{N} - \sum_{j=1}^\text{N} \mathcal{N}_j}
+\end{equation}
+
+
 \subsubsection{Derivatives of $f_5$}
 
 \begin{align}
-    \frac{\partial f_5}{\partial [\ln{\mathcal{N}_j}]} \Delta \ln \mathcal{N}_j &=  
-    \\ \frac{\partial f_5}{\partial [\ln \mathcal{N}]} \Delta\ln \mathcal{N}_j &= 0
-    \\ \frac{\partial f_5}{\partial [\ln T]} &= 
+    \frac{\partial f_5}{\partial [\ln{\mathcal{N}_j}]} \Delta \ln \mathcal{N}_j &= \mathcal{N}_j \frac{H_j^\circ}{\hat{R}T} \Delta \ln \mathcal{N}_j  
+    \\ \frac{\partial f_5}{\partial [\ln \mathcal{N}]} \Delta\ln \mathcal{N} &= 0
+    \\ \frac{\partial f_5}{\partial [\ln T]} &=  \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{c_{p,j}^\circ}{\hat{R}} \Delta \ln T
     \\ \frac{\partial f_5}{\partial [\pi_i]} \pi_i &= 0
     \\ \frac{\partial f_5}{\partial [\pi_q]} \pi_q &= 0
 \end{align}
 
+Giving:
+
+\begin{equation*}
+    \boxed{\sum_{j=1}^\text{NS} \mathcal{N}_j \frac{H_j^\circ}{\hat{R}T} \Delta \ln \mathcal{N}_j +  \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{c_{p,j}^\circ}{\hat{R}} \Delta \ln T = \frac{h' - h_0'}{\hat{R}T}}
+\end{equation*}
+
+\subsubsection{Derivatives of $f_6$}
+
+\begin{align}
+    \frac{\partial f_6}{\partial [\ln{\mathcal{N}_j}]} \Delta \ln \mathcal{N}_j &= \mathcal{N}_j \frac{S_j}{\hat{R}} \Delta \ln \mathcal{N}_j
+    \\ \frac{\partial f_6}{\partial [\ln \mathcal{N}]} \Delta\ln \mathcal{N} &= 0
+    \\ \frac{\partial f_6}{\partial [\ln T]} &= \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{c_{p,j}^\circ}{\hat{R}} \Delta \ln T
+    \\ \frac{\partial f_6}{\partial [\pi_i]} \pi_i &= 0
+    \\ \frac{\partial f_6}{\partial [\pi_q]} \pi_q &= 0
+\end{align}
+
+Giving
+
+\begin{equation*}
+    \boxed{\sum_{j=1}^\text{NS} \mathcal{N}_j \frac{S_j}{\hat{R}} \Delta \ln \mathcal{N}_j + \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{c_{p,j}^\circ}{\hat{R}} \Delta \ln T = \frac{s_0' - s'}{\hat{R}} + \mathcal{N} - \sum_{j=1}^\text{NS} \mathcal{N}_j }
+\end{equation*}
+
+All five of the equations are now listed for convenience:
+
+\begin{align}
+    &\Delta\ln{\mathcal{N}_j} - \Delta \ln{\mathcal{N}} - \sum_{i=1}^\text{NE} a_{ij}\pi_i - q_j \pi_q -  \frac{H_j^\circ}{\hat{R}T} \Delta \ln T = -\frac{\mu_j}{\hat{R}T}
+    \label{GlnNj}
+    \\ &\sum_{j=1}^\text{NS} a_{ij} \mathcal{N}_j \Delta \ln \mathcal{N}_j = b_i^\circ - \sum_{j=1}^\text{NS} a_{ij} \mathcal{N}_j
+    \label{Gpii}
+    \\ &\sum_{j=1}^\text{NS} q_j \mathcal{N}_j \Delta \ln \mathcal{N}_j = - \sum_{j=1}^\text{NS} q_i \mathcal{N}_j
+    \label{Gpiq}
+    \\ &\sum_{j=1}^\text{NS} \mathcal{N}_j \frac{H_j^\circ}{\hat{R}T} \Delta \ln \mathcal{N}_j +  \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{c_{p,j}^\circ}{\hat{R}} \Delta \ln T = \frac{h_0' - h'}{\hat{R}T}
+    \label{GdlnTH}
+    \\ &\sum_{j=1}^\text{NS} \mathcal{N}_j \frac{S_j}{\hat{R}} \Delta \ln \mathcal{N}_j + \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{c_{p,j}^\circ}{\hat{R}} \Delta \ln T = \frac{s_0' - s'}{\hat{R}} + \mathcal{N} - \sum_{j=1}^\text{NS} \mathcal{N}_j 
+    \label{GdlnTS}
+\end{align}
+
+
+\subsubsection{Reduced Gibbs Equations}
+
+A shortcut can be made to make this system of equations smaller. This is achieved by solving equation [\ref{GlnNj}] for $\Delta \ln \mathcal{N}_j$ and pluggin it into equations [\ref{Gpii}] - [\ref{GdlnTS}]
+
+\begin{equation}
+    \textcolor{red}{ \Delta\ln{\mathcal{N}_j} = \Delta \ln{\mathcal{N}} + \sum_{i=1}^\text{NE} a_{ij} \pi_i -\frac{\mu_j}{\hat{R}T} } \textcolor{blue}{+ q_j \pi_q} \textcolor{violet}{+ \frac{H_j^\circ}{\hat{R}T} \Delta \ln T}
+    \label{GdLnNj}
+\end{equation}
+
+
+Substitution into equation [\ref{Gpii}] - [\ref{GdlnTS}] yields:
+
+\begin{multline}
+    \textcolor{red}{\sum_{i=1}^\text{NE} \left[ \sum_{j=1}^\text{NS} a_{kj} a_{ij} \mathcal{N}_j \right] \pi_i + \left[ \sum_{j=1}^\text{NS} a_{kj} \mathcal{N}_j \right] \Delta \ln \mathcal{N}} \textcolor{blue}{ + \left[ \sum_{j=1}^\text{NS} a_{kj} q_j \mathcal{N}_j \right] \pi_q} \textcolor{violet}{+ \left[ \sum_{j=1}^\text{NS} a_{kj} \mathcal{N}_j \frac{H_j^\circ}{\hat{R}T} \right] \Delta \ln T}
+    \\ = \textcolor{red}{b_k^\circ - \sum_{j=1}^\text{NS} a_{kj} \mathcal{N}_j + \sum_{j=1}^\text{NS} a_{kj} \mathcal{N}_j \frac{\mu_j}{\hat{R}T}}
+    \label{GRed}
+\end{multline}
+
+\begin{multline}
+    \textcolor{red}{\sum_{i=1}^\text{NE} \left[ \sum_{j=1}^\text{NS} a_{ij} \mathcal{N}_j \right] \pi_i + \left[ \sum_{j=1}^\text{NS} \mathcal{N}_j - \mathcal{N} \right] \Delta \ln \mathcal{N}} \textcolor{blue}{ + \left[ \sum_{j=1}^\text{NS} q_j \mathcal{N}_j \right] \pi_q} \textcolor{violet}{+ \left[ \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{H_j^\circ}{\hat{R}T} \right] \Delta \ln T}
+    \\ = \textcolor{red}{\mathcal{N} - \sum_{j=1}^\text{NS} \mathcal{N}_j + \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{\mu_j}{\hat{R}T}}
+    \label{GRed}
+\end{multline}
+
+
+\begin{multline}
+    \textcolor{blue}{\sum_{i=1}^\text{NE} \left[ \sum_{j=1}^\text{NS} a_{ij} q_j \mathcal{N}_j \right] \pi_i + \left[ \sum_{j=1}^\text{NS} q_j \mathcal{N}_j \right] \Delta \ln \mathcal{N} + \left[ \sum_{j=1}^\text{NS} q_j^2 \mathcal{N}_j \right] \pi_q} + \textcolor{violet}{\left[ \sum_{j=1}^\text{NS} q_j \mathcal{N}_j \frac{H_j^\circ}{\hat{R}T} \right] \Delta \ln T}
+    \\ = \textcolor{blue}{\sum_{j=1}^\text{NS} q_j \mathcal{N}_j \frac{\mu_j}{\hat{R}T} - \sum_{j=1}^\text{NS} q_j \mathcal{N}_j}
+\end{multline}
+
+
+\begin{multline}
+    \textcolor{orange}{\sum_{i=1}^\text{NE} \left[ \sum_{j=1}^\text{NS} a_{ij} \mathcal{N}_j \frac{H_j^\circ}{\hat{R}T} \right] \pi_i + \left[ \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{H_j^\circ}{\hat{R}T} \right] \Delta \ln \mathcal{N}} \textcolor{blue}{+ \left[ \sum_{j=1}^\text{NS} q_j \mathcal{N}_j \frac{H_j^\circ}{\hat{R}T} \right] \pi_q} 
+    \\ \textcolor{orange}{+ \left[ \sum_{j=1}^\text{NS} \mathcal{N}_j \left( \frac{H_j^\circ}{\hat{R}T} \right)^2 + \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{c_{p,j}^\circ}{\hat{R}} \right] \Delta \ln T = \frac{h_0' - h'}{\hat{R}T} + \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{H_j^\circ}{\hat{R}T} \frac{\mu_j}{\hat{R}T}}
+\end{multline}
+
+
+\begin{multline}
+    \textcolor{teal}{\sum_{i=1}^\text{NE} \left[ \sum_{j=1}^\text{NS} a_{ij} \mathcal{N}_j \frac{S_j}{\hat{R}} \right] \pi_i + \left[ \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{S_j}{\hat{R}} \right] \Delta \ln \mathcal{N}} \textcolor{blue}{+ \left[ \sum_{j=1}^\text{NS} q_j \mathcal{N}_j \frac{S_j}{\hat{R}} \right] \pi_q} 
+    \\ \textcolor{teal}{+ \left[ \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{S_j}{\hat{R}} \frac{H_j^\circ}{\hat{R}T} + \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{c_{p,j}^\circ}{\hat{R}} \right] \Delta \ln T = \frac{s_0' - s'}{\hat{R}} + \mathcal{N} - \sum_{j=1}^\text{NS} \mathcal{N}_j + \sum_{j=1}^\text{NS} \mathcal{N}_j \frac{S_j}{\hat{R}} \frac{\mu_j}{\hat{R}T} }
+\end{multline}
+
+There are NE number of equation [\ref{GRed}], and only one of all others. Once this system has been solved, you recover $\mathcal{N}_j$ with equation [\ref{GdLnNj}]. 
+\vspace{5mm}
+\\ The equations are colored according to when they are needed. \textcolor{red}{Red coloring} denotes terms that arise from the elemental constraint condition. These are included no matter what. \textcolor{blue}{Blue} denotes terms that are added when you include the charge constraint. \textcolor{violet}{Violet} terms are added for both HP and SP constraints. \textcolor{orange}{orange} and \textcolor{teal}{teal} are the rows added for enthalpy or entropy constraints, respectively.
 
 
 \subsection{Helmholtz Minimization}
@@ -348,7 +444,10 @@ Where the chemical potential is redefined as:
     \label{chempotF}
 \end{equation}
 
-and $R' = \hat{R} \cdot 10^{-5}$ is the same as dividing $\hat{R}$ by the reference pressure of 1 bar. The contraints available for the Helmholtz energy are:
+and $R' = \hat{R} \cdot 10^{-5}$ is the same as dividing $\hat{R}$ by the reference pressure of 1 bar. 
+
+\subsubsection{Constraints}
+The contraints available for the Helmholtz energy are:
 
 \begin{itemize}
 \item Hold temperature (T) and volume (V) constant.
@@ -394,6 +493,7 @@ While you may be able to include the constraints for internal energy and entropy
     \label{helmholtzL}
 \end{equation}
 
+\subsubsection{Derivatives}
 We first find our function $f$ that are equal to 0 by taking the derivatives wrt $\mathcal{N}_j,$ $\lambda_i$, and $\lambda_q$:
 
 \begin{align}
@@ -402,7 +502,10 @@ We first find our function $f$ that are equal to 0 by taking the derivatives wrt
     \\ f_3 &= \frac{\partial \mathcal{L}}{\partial \lambda_q} = \sum_{j=1}^\text{NS} q_j \mathcal{N}_j - 0= 0
 \end{align}
 
-The negative of these functions ($-f$) are played on the RHS of the Newton solver.We now form the second derivatives that define our Jacobian in the Newton step. We expand the chemical potential term using equation \ref{chempotF} and non-dimensionalize the equation by $\hat{R}T$. We make sure to convert these equations into a form that can be differentiated by our non-linear variables (i.e. $N_j = \exp(\ln(\mathcal{N}_j))$). We also set $\pi = -\lambda/\hat{R}T$. The derivatives for $f_1$ are then:
+The negative of these functions ($-f$) are played on the RHS of the Newton solver.We now form the second derivatives that define our Jacobian in the Newton step. We expand the chemical potential term using equation \ref{chempotF} and non-dimensionalize the equation by $\hat{R}T$. We make sure to convert these equations into a form that can be differentiated by our non-linear variables (i.e. $N_j = \exp(\ln(\mathcal{N}_j))$). We also set $\pi = -\lambda/\hat{R}T$. 
+
+\subsubsection{Derivatives for $f_1$}
+The derivatives for $f_1$ are then:
 
 \begin{align}
     \frac{\partial f_1}{\partial [\ln \mathcal{N}_j]} \Delta \ln \mathcal{N}_j &= \Delta \ln \mathcal{N}_j
@@ -418,7 +521,11 @@ The derivation for equation [\ref{f1lnT}] is carried out in more depth in sectio
     \boxed{\Delta \ln \mathcal{N}_j - \sum_{i=1}^\text{NE}a_{ij} \pi_i - q_j \pi_q -\frac{U_j^\circ}{\hat{R}T} \Delta \ln T  = -\frac{\mu_j}{\hat{R}T} }
 \end{equation*}
 
-There will be NS number of these equations in our system. Next, we take the derivatives of $f_2$:
+There will be NS number of these equations in our system. 
+
+
+\subsubsection{Derivatives for $f_2$}
+Next, we take the derivatives of $f_2$:
 
 \begin{align}
     \frac{\partial f_2}{\partial [\ln \mathcal{N}_j]} \Delta \ln \mathcal{N}_j &= \mathcal{N}_j a_{i,j} \Delta \ln \mathcal{N}_j
@@ -433,7 +540,11 @@ Which gives:
     \boxed{ \sum_{j=1}^\text{NS}\mathcal{N}_j a_{ij} \Delta \ln \mathcal{N}_j = b_i^\circ - \sum_{j=1}^\text{NS} a_{ij} \mathcal{N}_j}
 \end{equation*}
 
-There will be NE of these equations. Finally, for $f_3$ we get:
+There will be NE of these equations. 
+
+\subsubsection{Derivatives for $f_3$} 
+
+For $f_3$ we get:
 
 \begin{align}
     \frac{\partial f_3}{\partial [\ln \mathcal{N}_j]} \Delta \ln \mathcal{N}_j &= \mathcal{N}_j q_j \Delta \ln \mathcal{N}_j
@@ -448,7 +559,9 @@ Which gives only one equation:
     \boxed{ \sum_{j=1}^\text{NS}\mathcal{N}_j q_j \Delta \ln \mathcal{N}_j = -\sum_{j=1}^\text{NS} q_j \mathcal{N}_j}
 \end{equation*}
 
-Finally, we look towards the constraints. For internal energy, we have:
+
+\subsubsection{Derivatives for $f_4$}
+For internal energy, we have:
 
 \begin{equation}
     f_4(\ln \mathcal{N}_j, \ln T) = \sum_{j=1}^\text{NS} \mathcal{N}_j U_j^\circ - u_0' = u' - u_0'
@@ -469,6 +582,7 @@ After non-dimensionalizing, we are left with:
     \boxed{ \sum_{j=1}^\text{NS}\frac{\mathcal{N}_jU_j^\circ}{\hat{R}T} \Delta \ln \mathcal{N}_j + \sum_{j=1}^\text{NS} \frac{ \mathcal{N}_jc_{v,j}^\circ}{R} \Delta \ln T = \frac{u_0' - u'}{\hat{RT}}}
 \end{equation*}
 
+\subsubsection{Derivatives for $f_5$}
 For the entropy constraint we have:
 
 \begin{equation}

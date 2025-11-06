@@ -5,32 +5,163 @@
 
 using namespace std;
 
+namespace gibbs {
 
+    inline void compute_mu(mix& gas) {
+        for (int j = 0; j < gas.NS; ++j) {
+            gas.mu_RT[j] = gas.mu0_RT[j] + log(gas.N[j] / gas.N_tot) + log(gas.p / 1e5);
+        }
+    }        
 
-
-// namespace gibbs {
-
-//     void compute_mu(mix& gas) {
+    // This function forms the entries in J and F for the elemental contraints.
+    // ==== COMPLETED ====
+    inline void form_elemental(double* J, double* F, mix& gas) {
         
-//     }        
+        int NS = gas.NS;
+        int NE = gas.NE;
+        int J_SIZE = gas.J_SIZE;
 
-//     void form_elemental(double* J, double* F, mix& gas) {
+        int offset;
+        double sum, akj_N_sum;
 
-//     }
+        vector<double> akj_N(NS);
 
-//     void form_charge(double* J, double* F, mix& gas) {
+        // === Elemental rows ===
+        for (int k = 0; k < NE; ++k) {
 
-//     }
+            offset = k * J_SIZE;
 
-//     void form_H(double* J, double* F, mix& gas) {
+            // 
+            akj_N_sum = 0.0;
+            for (int j = 0; j < NS; ++j) {
+                akj_N[j] = gas.a[k * NS + j] * gas.N[j];
+                akj_N_sum += akj_N[j];
+            }
 
-//     }
+            for (int i = 0; i < NE; ++i) {
 
-//     void form_S(double* J, double* F, mix& gas) {
+                sum = 0.0;
+                for (int j = 0; j < NS; ++j)
+                    sum += akj_N[j] * gas.a[i * NS + j];
 
-//     }
+                J[offset + i] = sum;
+            }
 
-// }
+            // N column
+            J[offset + NE] = akj_N_sum;
+
+
+            sum = 0.0;
+            for (int j = 0; j < NS; ++j) 
+                sum += akj_N[j] * gas.mu_RT[j];
+
+            F[k] = gas.b[k] - akj_N_sum + sum;       
+        }
+
+        // === N row ===
+
+        offset = NE * J_SIZE;
+
+        // Elemental columns in N row
+        for (int i = 0; i < NE; ++i) {
+            sum = 0.0;
+            for (int j = 0; j < NS; ++j)
+                sum += gas.N[j] * gas.a[i * NS + j];
+
+            J[offset + i] = sum;
+        }
+
+        // N column in N row
+        sum = 0.0; 
+        for (int j = 0; j < NS; ++j) 
+            sum += gas.N[j];
+        
+        J[offset + NE] = sum - gas.N_tot;
+
+        // RHS
+        double sum1 = 0.0;
+        for (int j = 0; j < NS; ++j)
+            sum1 += gas.N[j] * gas.mu_RT[j];
+
+        F[NE] = gas.N_tot - sum + sum1; 
+    }
+
+    inline void form_charge(double* J, double* F, mix& gas) {
+        
+        int NS = gas.NS;
+        int NE = gas.NE;
+        int J_SIZE = gas.J_SIZE;
+
+        int offset = (NE + 1) * J_SIZE;
+
+        vector<double> qj_Nj(NS);
+        double qjNj_sum = 0.0, sum;
+
+        // Sum terms used a lot.
+        for (int j = 0; j < NS; ++j) {
+            qj_Nj[j] = gas.species[j].q * max(1e-12, gas.N[j]); 
+            qjNj_sum += qj_Nj[j];
+        }
+
+        // Charge column in elemental rows
+        for (int k = 0; k < NE; ++k) {
+
+            sum = 0.0;
+            for (int j = 0; j < NS; ++j) 
+                sum += qj_Nj[j] * gas.a[k * NS + j];
+
+            J[k * J_SIZE + NE + 1] = sum;
+        }
+
+        // Charge column in N row
+        J[NE * J_SIZE + NE + 1] = qjNj_sum;
+        
+        // Elemental columns in charge row
+        for (int i = 0; i < NE; ++i) {
+
+            sum = 0.0;
+            for (int j = 0; j < NS; ++j) 
+                sum += qj_Nj[j] * gas.a[i * NS + j];
+
+            J[offset + i] = sum;
+        }
+
+        // N column in charge row
+        J[offset + NE] = qjNj_sum;
+
+        // Charge column in charge row;
+        sum = 0.0;
+        for (int j = 0; j < NS; ++j) 
+            sum += qj_Nj[j] * gas.species[j].q;
+
+        J[offset + NE + 1] = sum;
+
+        if (gas.NEEDS_T) {
+
+            sum = 0.0;
+            for (int j = 0; j < NE; ++j)
+                sum += qj_Nj[j] * gas.H0_RT[j];
+
+            J[offset + NE + 2] = sum;
+        }
+
+        // RHS
+        sum = 0.0;
+        for (int j = 0; j < NS; ++j) 
+            sum += qj_Nj[j] * gas.mu_RT[j];
+
+        F[NE + 1] = sum - qjNj_sum;
+    }
+
+    // void form_H(double* J, double* F, mix& gas) {
+
+    // }
+
+    // void form_S(double* J, double* F, mix& gas) {
+
+    // }
+
+}
 
 
 namespace helm {
@@ -43,8 +174,7 @@ namespace helm {
         }
     }
 
-    // This function forms the entries in J and F for the elemental contrainys.
-    // It currently uses two if statements to check if it needs ions and T columns.
+    // This function forms the entries in J and F for the elemental contraints.
     // ==== COMPLETED ====
     inline void form_elemental(double* J, double* F, mix& gas) {
 
@@ -71,9 +201,9 @@ namespace helm {
             for (int i = 0; i < NE; ++i) {
                 
                 sum = 0.0;
-                for (int j = 0; j < NS; ++j) {
+                for (int j = 0; j < NS; ++j)
                     sum += akj_N[j] * gas.a[i * NS + j];
-                };
+            
                 J[offset + i] = sum;
             }
             

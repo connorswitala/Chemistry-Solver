@@ -9,12 +9,21 @@
 \contentsline {subsubsection}{\numberline {1.4.3}Derivatives of $f_1$}{5}{subsubsection.1.4.3}%
 \contentsline {subsubsection}{\numberline {1.4.4}Derivatives of $f_2$}{6}{subsubsection.1.4.4}%
 \contentsline {subsubsection}{\numberline {1.4.5}Derivatives of $f_3$}{6}{subsubsection.1.4.5}%
-\contentsline {subsubsection}{\numberline {1.4.6}Derivatives of $f_4$}{6}{subsubsection.1.4.6}%
+\contentsline {subsubsection}{\numberline {1.4.6}Derivatives of $f_4$}{7}{subsubsection.1.4.6}%
 \contentsline {subsubsection}{\numberline {1.4.7}Derivatives of $f_5$}{7}{subsubsection.1.4.7}%
-\contentsline {subsection}{\numberline {1.5}Helmholtz Minimization}{7}{subsection.1.5}%
-\contentsline {subsubsection}{\numberline {1.5.1}Reduced Helmholtz Equations}{10}{subsubsection.1.5.1}%
-\contentsline {subsection}{\numberline {1.6}Useful Relationships}{11}{subsection.1.6}%
-\contentsline {section}{\numberline {2}Standard State Chemical Potential Derivatives}{11}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Gibbs Derivative}{12}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Helmholtz Derivative}{12}{subsection.2.2}%
-\contentsline {section}{\numberline {3}Coding Tricks}{13}{section.3}%
+\contentsline {subsubsection}{\numberline {1.4.8}Derivatives of $f_6$}{8}{subsubsection.1.4.8}%
+\contentsline {subsubsection}{\numberline {1.4.9}Reduced Gibbs Equations}{8}{subsubsection.1.4.9}%
+\contentsline {subsection}{\numberline {1.5}Helmholtz Minimization}{10}{subsection.1.5}%
+\contentsline {subsubsection}{\numberline {1.5.1}Constraints}{10}{subsubsection.1.5.1}%
+\contentsline {subsubsection}{\numberline {1.5.2}Derivatives}{11}{subsubsection.1.5.2}%
+\contentsline {subsubsection}{\numberline {1.5.3}Derivatives for $f_1$}{11}{subsubsection.1.5.3}%
+\contentsline {subsubsection}{\numberline {1.5.4}Derivatives for $f_2$}{11}{subsubsection.1.5.4}%
+\contentsline {subsubsection}{\numberline {1.5.5}Derivatives for $f_3$}{12}{subsubsection.1.5.5}%
+\contentsline {subsubsection}{\numberline {1.5.6}Derivatives for $f_4$}{12}{subsubsection.1.5.6}%
+\contentsline {subsubsection}{\numberline {1.5.7}Derivatives for $f_5$}{13}{subsubsection.1.5.7}%
+\contentsline {subsubsection}{\numberline {1.5.8}Reduced Helmholtz Equations}{14}{subsubsection.1.5.8}%
+\contentsline {subsection}{\numberline {1.6}Useful Relationships}{15}{subsection.1.6}%
+\contentsline {section}{\numberline {2}Standard State Chemical Potential Derivatives}{15}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Gibbs Derivative}{15}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Helmholtz Derivative}{16}{subsection.2.2}%
+\contentsline {section}{\numberline {3}Coding Tricks}{16}{section.3}%

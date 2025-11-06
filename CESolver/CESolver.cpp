@@ -12,6 +12,10 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
             equilibrium = &CESolver::compute_equilibrium_TP;
             energy = "Gibbs";
             contraint = "temperature and pressure";
+            NS = gas.NS;
+            NE = gas.NE;
+            J_SIZE = NE + 1 + gas.HAS_IONS + gas.NEEDS_T;
+            gas.J_SIZE = J_SIZE;
             break;
 
         case::ConstraintType::HP:
@@ -19,6 +23,10 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
             equilibrium = &CESolver::compute_equilibrium_HP;
             energy = "Gibbs";
             contraint = "enthalpy and pressure";
+            NS = gas.NS;    
+            NE = gas.NE;
+            J_SIZE = NE + 1 + gas.HAS_IONS + gas.NEEDS_T;
+            gas.J_SIZE = J_SIZE;
             break;
 
         case::ConstraintType::SP:
@@ -26,6 +34,10 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
             equilibrium = &CESolver::compute_equilibrium_SP;
             energy = "Gibbs";
             contraint = "entropy and pressure";
+            NS = gas.NS;
+            NE = gas.NE;
+            J_SIZE = NE + 1 + gas.HAS_IONS + gas.NEEDS_T;
+            gas.J_SIZE = J_SIZE;
             break;
 
         case::ConstraintType::TV:
@@ -33,6 +45,10 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
             equilibrium = &CESolver::compute_equilibrium_TV;
             energy = "Helmholtz";
             contraint = "temperature and volume";
+            NS = gas.NS;
+            NE = gas.NE;
+            J_SIZE = NE + gas.HAS_IONS + gas.NEEDS_T;
+            gas.J_SIZE = J_SIZE;
             break;
 
         case::ConstraintType::UV:
@@ -40,6 +56,10 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
             equilibrium = &CESolver::compute_equilibrium_UV;
             energy = "Helmholtz";
             contraint = "internal energy and volume";
+            NS = gas.NS;
+            NE = gas.NE;
+            J_SIZE = NE + gas.HAS_IONS + gas.NEEDS_T;
+            gas.J_SIZE = J_SIZE;
             break;
 
         case::ConstraintType::SV:
@@ -47,20 +67,17 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
             equilibrium = &CESolver::compute_equilibrium_SV;
             energy = "Helmholtz";
             contraint = "entropy and volume";
+            NS = gas.NS;
+            NE = gas.NE;
+            J_SIZE = NE + gas.HAS_IONS + gas.NEEDS_T;
+            gas.J_SIZE = J_SIZE;
             break;
     }
-
-    NS = gas.NS;
-    NE = gas.NE;
-    J_SIZE = NE + gas.HAS_IONS + gas.NEEDS_T;
-    gas.J_SIZE = J_SIZE;
 
     string ions;
     if (gas.HAS_IONS) ions = " and charge constraint enforced";
     else ions = " and no charge constraint";
-
     cout << "-- Configuration complete. Using " << energy << " minimization with " << contraint << " held constant" << ions << endl << endl;
-
 }
 
 void CESolver::compute_equilibrium(double& a, double& b) {
@@ -149,11 +166,9 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
 
     while (!converged) {   
 
-        auto start = NOW;
+ 
         NASA_fits();
-        auto end = NOW;
-        auto duration = chrono::duration<double>(end - start);
-        cout << "NASA_fits() took " << duration.count() << " s." << endl;
+
         // Compute u'
         gas.up = 0.0;
         for (int j = 0; j < NS; ++j) 
@@ -207,7 +222,62 @@ inline void CESolver::compute_equilibrium_SV(double& S, double& V) {
 }   
 
 inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
-    cout << "Not made yet" << endl;
+   
+    bool converged = false;
+    static Vector J(J_SIZE * J_SIZE), F(J_SIZE), DELTA(J_SIZE), DlnNj(NS); 
+
+    gas.T = T;
+    gas.p = P;
+
+    double sum;
+
+    sum = 0.0;
+    for (int j = 0; j < NS; ++j) 
+        sum += gas.X0[j];
+
+    gas.N_tot = sum;
+
+    for (int j = 0; j < NS; ++j) {
+        gas.N[j] = max(1e-12, gas.X0[j]) / sum;
+    }
+
+    NASA_fits();
+
+    while (!converged) {        
+
+        gibbs::compute_mu(gas);
+        gibbs::form_elemental(J.data(), F.data(), gas);
+        if (gas.HAS_IONS) gibbs::form_charge(J.data(), F.data(), gas);
+
+        LUSolve(J.data(), F.data(), DELTA.data(), J_SIZE, 1);
+
+        for (int j = 0; j < NS; ++j) {
+            sum = 0.0;
+            for (int i = 0; i < NE; ++i) {
+                sum += gas.a[i * NS + j] * DELTA[i];
+            }
+            DlnNj[j] = DELTA[NE] + sum - gas.mu_RT[j];
+            if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE + 1];
+        }
+
+        gas.N_tot *= exp(DELTA[NE]);
+    
+        for (int j = 0; j < NS; ++j) {
+            gas.N[j] *= exp(DlnNj[j]);
+        }
+        
+        converged = check_convergence(DlnNj.data());   
+    }
+
+    sum = 0.0;
+    for (int j = 0; j < NS; ++j) 
+        sum += gas.N[j];
+
+    for (int j = 0; j < NS; ++j) {
+        gas.X[j] = gas.N[j] / sum;
+        gas.X0[j] = gas.N[j];
+    }
+
 }
 
 inline void CESolver::compute_equilibrium_HP(double& H, double& P) {
@@ -217,8 +287,6 @@ inline void CESolver::compute_equilibrium_HP(double& H, double& P) {
 inline void CESolver::compute_equilibrium_SP(double& S, double& P) {
     cout << "Not made yet" << endl;
 }
-
-
 
 inline void CESolver::findTRange() {
     if      (gas.T >= 200.0   && gas.T <= 1000.0)   T_flag = 0; 
@@ -303,18 +371,18 @@ inline void CESolver::compute_mass_fractions() {
         }
 }
 
-inline void CESolver::display_gas_properties() {
+void CESolver::print_properties() {
 
 
     cout << endl << setw(30) << "Mixture Temperature: " << gas.T << " [K]" << endl;
     cout << setw(30) << "Mixture Pressure: " << gas.p / 1000.0 << " [kPa]" << endl;
-    cout << setw(30) << "Mixture Density: " << gas.rho << " [kg/m^3]" << endl;
-    cout << setw(30) << "Mixture Internal Energy: " << gas.e / 1000.0 << " [kJ/kg]" << endl;
-    cout << setw(30) << "Mixture Gas Constant: " << gas.R << " [J/kg-K]" << endl;
-    cout << setw(30) << "Mixture cp: " << gas.cp << " [J/kg-K]" << endl;
-    cout << setw(30) << "Mixture cv: " << gas.cv << " [J/kg-K]" << endl;
-    cout << setw(30) << "Mixture gamma: " << gas.gamma << endl;
-    cout << setw(30) << "Mixture MW: " << gas.MW << " [g/mol]" << endl;
+    // cout << setw(30) << "Mixture Density: " << gas.rho << " [kg/m^3]" << endl;
+    // cout << setw(30) << "Mixture Internal Energy: " << gas.e / 1000.0 << " [kJ/kg]" << endl;
+    // cout << setw(30) << "Mixture Gas Constant: " << gas.R << " [J/kg-K]" << endl;
+    // cout << setw(30) << "Mixture cp: " << gas.cp << " [J/kg-K]" << endl;
+    // cout << setw(30) << "Mixture cv: " << gas.cv << " [J/kg-K]" << endl;
+    // cout << setw(30) << "Mixture gamma: " << gas.gamma << endl;
+    // cout << setw(30) << "Mixture MW: " << gas.MW << " [g/mol]" << endl;
 
 
     cout << endl << setw(67) << "====: Species Molar Fractions :==== " << endl;
@@ -323,11 +391,11 @@ inline void CESolver::display_gas_properties() {
         if ((i + 1) % 4 == 0) cout << endl;
     }
 
-    cout << endl << endl << setw(67) <<  "====: Species Mass Fractions :==== " << endl;
-    for (int i = 0; i < NS; ++i) {
-        cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
-        if ((i + 1) % 4 == 0) cout << endl;
-    }
+    // cout << endl << endl << setw(67) <<  "====: Species Mass Fractions :==== " << endl;
+    // for (int i = 0; i < NS; ++i) {
+    //     cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
+    //     if ((i + 1) % 4 == 0) cout << endl;
+    // }
 }
 
 inline bool CESolver::check_convergence(double* dln) {
