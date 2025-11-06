@@ -219,6 +219,11 @@ namespace common_air {
                 return gas;
                 break;
 
+            case::GasType::AIR7:
+                gas = common_air::make_air7();
+                return gas;
+                break;    
+
             case::GasType::AIR11:
                 gas = common_air::make_air11();
                 return gas;
@@ -258,6 +263,8 @@ namespace common_air {
 
         air.Y = vector<double>(air.NS);
         air.X = vector<double>(air.NS);
+        
+        air.T = 3000.0;
 
         air.gamma = 1.4;
         air.R = 287.0;
@@ -282,6 +289,51 @@ namespace common_air {
         return air;
     }
 
+    mix make_air7() {
+        mix air;
+        air.species = {N2, O2, NO, N, O, NO_ion, e_ion};
+
+        air.NS = 7;
+        air.NE = 2;
+
+        air.HAS_IONS = true;
+
+        air.H0_RT = vector<double>(air.NS);
+        air.S0_R = vector<double>(air.NS);
+        air.mu0_RT = vector<double>(air.NS);
+        air.CP0_R = vector<double>(air.NS);
+        air.mu_RT = vector<double>(air.NS);        
+        air.N = vector<double>(air.NS);
+
+        air.Y = vector<double>(air.NS);
+        air.X = vector<double>(air.NS);
+        
+        air.T = 3000.0;
+
+        air.gamma = 1.4;
+        air.R = 287.0;
+        air.cv = air.R/(air.gamma - 1.0);
+        air.cp = air.gamma * air.cv;
+
+        air.X0 = { 0.7808, 0.2192, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+        air.a = {2, 0, 1, 1, 0, 1, 0,   // N
+                 0, 2, 1, 0, 1, 1, 0};  // O
+
+        air.b = vector<double>(air.NE, 0.0);         
+        for (int i = 0; i < air.NE; ++i) {
+            for (int j = 0; j < air.NS; ++j) {
+                air.b[i] += air.a[i * air.NS + j] * air.X0[j];
+            }
+        }
+
+        cout << endl << "-- " << air.NS << " species air mix created. Contains: ";
+        for (int i = 0; i < air.NS; ++i) cout << air.species[i].name << ", ";
+        cout << endl;
+        return air;
+    }
+
+
     mix make_air11_Ar() {
         mix air;
         air.species = {N2, O2, NO, N, O, Ar, Ar_ion, N_ion, O_ion, NO_ion, e_ion};
@@ -300,6 +352,8 @@ namespace common_air {
 
         air.Y = vector<double>(air.NS);
         air.X = vector<double>(air.NS);
+
+        air.T = 3000.0;
 
         air.gamma = 1.4;
         air.R = 287.0;
@@ -345,6 +399,8 @@ namespace common_air {
         air.Y = vector<double>(air.NS);
         air.X = vector<double>(air.NS);
 
+        air.T = 3000.0;
+
         air.gamma = 1.4;
         air.R = 287.0;
         air.cv = air.R/(air.gamma - 1.0);
@@ -387,6 +443,8 @@ namespace common_air {
 
         air.Y = vector<double>(air.NS);
         air.X = vector<double>(air.NS);
+
+        air.T = 3000.0;
 
         air.gamma = 1.4;
         air.R = 287.0;

@@ -56,6 +56,22 @@
         "cstring": "cpp",
         "ratio": "cpp",
         "fstream": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "csignal": "cpp",
+        "cstdarg": "cpp",
+        "codecvt": "cpp",
+        "complex": "cpp",
+        "condition_variable": "cpp",
+        "list": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "source_location": "cpp",
+        "future": "cpp",
+        "mutex": "cpp",
+        "semaphore": "cpp",
+        "stdfloat": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp",
+        "filesystem": "cpp"
     }
 }

@@ -31,7 +31,7 @@ inline double dotProd(const double* v1, const double* v2, const int n) {
     return r;
 }
 
-inline void matrix_divide(double* A, const double* B, double* X, int n, int m) {
+inline void LUSolve(double* A, const double* B, double* X, int n, int m) {
     // Copy A because LU is in-place and we don't want to destroy the original
     std::vector<double> LU(A, A + n * n);
 
