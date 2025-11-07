@@ -51,11 +51,11 @@ class CESolver {
 
     inline void NASA_fits();                               // Calculates H0, S0, and MU0.
 
-    inline void compute_molar_fractions();                 // Newton Iteration to solve for concentrations.
-
     inline void compute_mass_fractions();                  // Converts molar fractions to mass fractions.
 
-    inline bool check_convergence(double* dln);
+    inline bool check_convergence(double* dlnj, double& dln);
+
+    inline double compute_damping(double* dlnj, double& dln, double& dlnT);
 
 };
 

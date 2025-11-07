@@ -1,15 +1,15 @@
 # Fdb version 4
-["cusdep nlo nls EnergyMinimization"] 1762398685.23341 "EnergyMinimization.nlo" "EnergyMinimization.nls" "EnergyMinimization" 1762416378.34613 0
-  "EnergyMinimization.nlo" 1762416378.04285 3382 51a4ecbd75c6f64665f34adc02cbdb9b "pdflatex"
+["cusdep nlo nls EnergyMinimization"] 1762398685.23341 "EnergyMinimization.nlo" "EnergyMinimization.nls" "EnergyMinimization" 1762464058.00198 0
+  "EnergyMinimization.nlo" 1762464057.6947 3382 51a4ecbd75c6f64665f34adc02cbdb9b "pdflatex"
   (generated)
   "EnergyMinimization.nls"
   (rewritten before read)
-["pdflatex"] 1762416376.38033 "c:/Users/frodo/programs/Chemistry-Solver/documents/EnergyMinimization.tex" "EnergyMinimization.pdf" "EnergyMinimization" 1762416378.34711 0
-  "EnergyMinimization.aux" 1762416378.03885 6770 8a8e79e237a730c898df80e1a493e8cd "pdflatex"
+["pdflatex"] 1762464055.99493 "c:/Users/frodo/programs/Chemistry-Solver/documents/EnergyMinimization.tex" "EnergyMinimization.pdf" "EnergyMinimization" 1762464058.00292 0
+  "EnergyMinimization.aux" 1762464057.6917 6836 b764e7f2ae9df2e9f129d777d39ccc40 "pdflatex"
   "EnergyMinimization.nls" 1762398685.77981 2862 9c70c186e4fcbc7682d2bbc188fbb755 "cusdep nlo nls EnergyMinimization"
-  "EnergyMinimization.out" 1762416378.04085 4672 de6d44c5ba571da7314a9de3a3ef13a8 "pdflatex"
-  "EnergyMinimization.toc" 1762416378.04285 2642 80930fa1a95dd1a1ba75aaded186187a "pdflatex"
-  "c:/Users/frodo/programs/Chemistry-Solver/documents/EnergyMinimization.tex" 1762416373.3422 36618 262c0724ea2402dd2c7665328b8f1e1f ""
+  "EnergyMinimization.out" 1762464057.6937 4672 de6d44c5ba571da7314a9de3a3ef13a8 "pdflatex"
+  "EnergyMinimization.toc" 1762464057.6947 2642 80930fa1a95dd1a1ba75aaded186187a "pdflatex"
+  "c:/Users/frodo/programs/Chemistry-Solver/documents/EnergyMinimization.tex" 1762464050.63358 36793 8a7d823c27d12558b44b2c4abbdaf974 ""
   "c:/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1762307540.38749 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "c:/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1762309140.55469 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "c:/texlive/2025/texmf-dist/fonts/tfm/jknappen/ec/tcrm1000.tfm" 1762308513.99736 1536 e07581a4bb3136ece9eeb4c3ffab8233 ""

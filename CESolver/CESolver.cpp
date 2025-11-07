@@ -126,7 +126,7 @@ inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
             gas.N[j] *= exp(DlnNj[j]);
         }
         
-        converged = check_convergence(DlnNj.data());   
+        // converged = check_convergence(DlnNj.data());   
     }
 
 
@@ -202,7 +202,7 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
         }
         
         // Check convergence
-        converged = check_convergence(DlnNj.data());    
+        // converged = check_convergence(DlnNj.data());    
         if (fabs(DELTA[J_SIZE - 1]) > 1.0e-4) converged = false;    
     }
 
@@ -229,16 +229,16 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
     gas.T = T;
     gas.p = P;
 
-    double sum;
+    double sum, e, dlnT = 0.0;
 
     sum = 0.0;
     for (int j = 0; j < NS; ++j) 
-        sum += gas.X0[j];
+        sum += max(1e-12, gas.X0[j]);
 
     gas.N_tot = sum;
 
     for (int j = 0; j < NS; ++j) {
-        gas.N[j] = max(1e-12, gas.X0[j]) / sum;
+        gas.N[j] = max(1e-6, gas.X0[j]) / sum;
     }
 
     NASA_fits();
@@ -250,6 +250,15 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
         if (gas.HAS_IONS) gibbs::form_charge(J.data(), F.data(), gas);
 
         LUSolve(J.data(), F.data(), DELTA.data(), J_SIZE, 1);
+        
+        // cout << "========" << endl;
+        // for (int i = 0; i < J_SIZE; ++i) {
+        //     for (int j = 0; j < J_SIZE; ++j) {
+        //         cout << J[i * J_SIZE + j] << "\t";
+        //     }
+        //     cout << "|" << F[i] << "\t|" << DELTA[i] << endl;
+        // }
+        // cout << "========" << endl;
 
         for (int j = 0; j < NS; ++j) {
             sum = 0.0;
@@ -260,13 +269,14 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
             if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE + 1];
         }
 
-        gas.N_tot *= exp(DELTA[NE]);
+        e = compute_damping(DlnNj.data(), DELTA[NE], dlnT);
+     
+        gas.N_tot *=  exp(e * DELTA[NE]);
     
-        for (int j = 0; j < NS; ++j) {
-            gas.N[j] *= exp(DlnNj[j]);
-        }
-        
-        converged = check_convergence(DlnNj.data());   
+        for (int j = 0; j < NS; ++j)
+            gas.N[j] *= exp(e * DlnNj[j]);
+
+        converged = check_convergence(DlnNj.data(), DELTA[NE]);           
     }
 
     sum = 0.0;
@@ -277,7 +287,7 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
         gas.X[j] = gas.N[j] / sum;
         gas.X0[j] = gas.N[j];
     }
-
+    compute_mass_fractions();
 }
 
 inline void CESolver::compute_equilibrium_HP(double& H, double& P) {
@@ -398,7 +408,7 @@ void CESolver::print_properties() {
     // }
 }
 
-inline bool CESolver::check_convergence(double* dln) {
+inline bool CESolver::check_convergence(double* dlnj, double& dln) {
 
     double sum = 0.0, check, tol = 0.5e-5;
 
@@ -407,15 +417,62 @@ inline bool CESolver::check_convergence(double* dln) {
     
 
     for (int j = 0; j < NS; ++j) {
-        check = gas.N[j] * fabs(dln[j]) / sum;
+        check = gas.N[j] * fabs(dlnj[j]) / sum;
         if (check > tol) return false;
     }
 
+
+    check = gas.N_tot * fabs(dln) / sum;
+    if (check > tol) return false;
+    
     return true;
 }
 
+inline double CESolver::compute_damping(double* dlnj, double& dlnN, double& dlnT) {
+    // Constants from the text
+    constexpr double SIZE = 18.420681;          // ~ ln(1e8)
+    constexpr double C1   =  9.2103404;         // ~ ln(1e4)
+
+    // ---- λ1 = 2 / max( 5|ΔlnT|, 5|ΔlnN|, max_j |Δln n_j| ) ----
+    double max_dlnj = 0.0;
+    for (int j = 0; j < NS; ++j) {               // gaseous species only
+        double a = fabs(dlnj[j]);
+        if (a > max_dlnj) max_dlnj = a;
+    }
+    double denom1 = max( 5.0 * abs(dlnT), max(5.0 * abs(dlnN), max_dlnj));
+    double lambda1 = (denom1 > 0.0) ? std::min(1.0, 2.0 / denom1) : 1.0;
+
+    // ---- λ2 from (3.2) for species with ln(nj/n) <= -SIZE and Δln nj >= 0 ----
+    double lambda2 = 1.0;     // no constraint unless triggered
+    bool triggered = false;
 
 
+    for (int j = 0; j < NS; ++j) {
+
+        const double ratio = log(gas.N[j] / gas.N_tot);  // ln(nj/n)
+
+        if (ratio <= -SIZE && dlnj[j] >= 0.0) {
+
+            double denom2 = dlnj[j] - dlnN;
+
+            if (abs(denom2) > 0.0) {
+
+                double frac = abs((-ratio - C1) / denom2);
+                lambda2 = min(lambda2, frac);
+                triggered = true;
+
+            }
+        }
+    }
+
+    if (!triggered) lambda2 = 1.0;
+
+    // ---- Final damping factor λ = min(1, λ1, λ2) ----
+    double lambda = min(1.0, min(lambda1, lambda2));
+    if (lambda < 0.0) lambda = 0.0;  // safety clamp
+
+    return lambda;
+}
 
 
 

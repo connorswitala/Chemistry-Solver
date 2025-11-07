@@ -19,6 +19,7 @@ struct SpeciesInfo {
 
 struct mix {
 
+    string name;
     // ======================: Displayed properties in this box :=======================
     //                                                                                  |
     vector<SpeciesInfo> species;            // Vector of Species                        |

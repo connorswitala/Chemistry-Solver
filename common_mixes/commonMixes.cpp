@@ -247,6 +247,7 @@ namespace common_air {
 
     mix make_air5() {
         mix air;
+        air.name = "AIR5";
         air.species = {N2, O2, NO, N, O};
 
         air.NS = 5;
@@ -291,6 +292,7 @@ namespace common_air {
 
     mix make_air7() {
         mix air;
+        air.name = "AIR7";
         air.species = {N2, O2, NO, N, O, NO_ion, e_ion};
 
         air.NS = 7;
@@ -333,9 +335,9 @@ namespace common_air {
         return air;
     }
 
-
     mix make_air11_Ar() {
         mix air;
+        air.name = "AIR11_AR";
         air.species = {N2, O2, NO, N, O, Ar, Ar_ion, N_ion, O_ion, NO_ion, e_ion};
 
         air.NS = 11;
@@ -382,6 +384,7 @@ namespace common_air {
 
     mix make_air11() {
         mix air;
+        air.name = "AIR11";
         air.species = {N2, O2, NO, N, O, N2_ion, O2_ion, N_ion, O_ion, NO_ion, e_ion};
         
         air.NS = 11;
@@ -427,6 +430,7 @@ namespace common_air {
 
     mix make_air13() {
         mix air;
+        air.name = "AIR13";
         air.species = {N2, O2, NO, N, O, Ar, Ar_ion, N2_ion, O2_ion, N_ion, O_ion, NO_ion, e_ion};
 
         air.NS = 13;

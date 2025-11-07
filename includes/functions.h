@@ -9,7 +9,7 @@ namespace gibbs {
 
     inline void compute_mu(mix& gas) {
         for (int j = 0; j < gas.NS; ++j) {
-            gas.mu_RT[j] = gas.mu0_RT[j] + log(gas.N[j] / gas.N_tot) + log(gas.p / 1e5);
+            gas.mu_RT[j] = gas.mu0_RT[j] + log(gas.N[j] / gas.N_tot) + log(gas.p / 1.0e5);
         }
     }        
 
@@ -30,8 +30,7 @@ namespace gibbs {
         for (int k = 0; k < NE; ++k) {
 
             offset = k * J_SIZE;
-
-            // 
+            
             akj_N_sum = 0.0;
             for (int j = 0; j < NS; ++j) {
                 akj_N[j] = gas.a[k * NS + j] * gas.N[j];
@@ -39,7 +38,6 @@ namespace gibbs {
             }
 
             for (int i = 0; i < NE; ++i) {
-
                 sum = 0.0;
                 for (int j = 0; j < NS; ++j)
                     sum += akj_N[j] * gas.a[i * NS + j];
@@ -51,6 +49,7 @@ namespace gibbs {
             J[offset + NE] = akj_N_sum;
 
 
+            // RHS
             sum = 0.0;
             for (int j = 0; j < NS; ++j) 
                 sum += akj_N[j] * gas.mu_RT[j];
@@ -99,7 +98,7 @@ namespace gibbs {
 
         // Sum terms used a lot.
         for (int j = 0; j < NS; ++j) {
-            qj_Nj[j] = gas.species[j].q * max(1e-12, gas.N[j]); 
+            qj_Nj[j] = gas.species[j].q * gas.N[j]; 
             qjNj_sum += qj_Nj[j];
         }
 
@@ -118,7 +117,6 @@ namespace gibbs {
         
         // Elemental columns in charge row
         for (int i = 0; i < NE; ++i) {
-
             sum = 0.0;
             for (int j = 0; j < NS; ++j) 
                 sum += qj_Nj[j] * gas.a[i * NS + j];
@@ -136,10 +134,10 @@ namespace gibbs {
 
         J[offset + NE + 1] = sum;
 
+        // Temp column in charge row
         if (gas.NEEDS_T) {
-
             sum = 0.0;
-            for (int j = 0; j < NE; ++j)
+            for (int j = 0; j < NS; ++j)
                 sum += qj_Nj[j] * gas.H0_RT[j];
 
             J[offset + NE + 2] = sum;
