@@ -25,6 +25,17 @@ int main() {
 
     CE.print_properties();
 
-    cout << endl << "Total time: " << setprecision(8) << duration << endl;
+    cout << endl << "Old time: " << setprecision(8) << duration << endl;
+
+    start = NOW;
+
+    CE.CFD_equilibrium(T, V); // Solve minimization 
+    
+    end = NOW;
+    duration = chrono::duration<double>(end - start).count();
+
+    CE.print_properties();
+
+    cout << endl << "New time: " << setprecision(8) << duration << endl;
     return 0;
 }

@@ -20,13 +20,13 @@ int main() {
     mix gas = common_air::create_air_mix(g); // Create gas mix
     CESolver CE(gas, constraint);   // Construct CESolver class for minimization.
 
-    double T, P;
+    double T, T_base = 300.0, P;
     double U, V = 1.0;
 
     int N = 500000;
     auto start = NOW;
     for (int i = 0; i < N; ++i) {
-        T = distT(gen);
+        T = T_base + i * (20000.0 - 300.0) / N;
         CE.compute_equilibrium(T, V); // Solve minimization 
     }
     
@@ -41,8 +41,8 @@ int main() {
 
     auto start1 = NOW;
     for (int i = 0; i < N; ++i) {
-        T = distT(gen);
-        CE.test(T, V); // Solve minimization 
+        T = T_base + i * (20000.0 - 300.0) / N;
+        CE.CFD_equilibrium(T, V); // Solve minimization 
     }
     
     auto end1 = NOW;
@@ -50,9 +50,7 @@ int main() {
 
     CE.print_properties();
 
-    cout << endl << "OLD version total time: " << setprecision(8) << duration1 << "-- Time per call = " << fixed << setprecision(8) << duration1 / N << " s." << endl << endl;
-
-
+    cout << endl << "NEW version total time: " << setprecision(8) << duration1 << "-- Time per call = " << fixed << setprecision(8) << duration1 / N << " s." << endl << endl;
 
     return 0;
 }

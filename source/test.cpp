@@ -17,7 +17,8 @@ int main() {
     double V = 1.0;
 
     auto start = NOW;
-    CE.test(T, V);
+    CE.CFD_equilibrium(T, V);
+    // CE.compute_equilibrium(T, V);
     auto end = NOW;
     auto duration = chrono::duration<double>(end - start).count();
 

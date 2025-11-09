@@ -5,6 +5,7 @@
 #include "../includes/functions.h"
 #include "../includes/math.h"
 
+
 class CESolver {
         
     public:
@@ -19,7 +20,7 @@ class CESolver {
 
     void compute_equilibrium(double& a, double& b);
 
-    void test(double T, double V);
+    void CFD_equilibrium(double T, double V);
     
     private:
 
@@ -34,6 +35,7 @@ class CESolver {
 
     Vector J, F, DELTA;   // Old solution vector of molar concentrations.
     Vector XI, J_STAR;
+    
     int XI_SIZE, XI_ROWS;
 
     inline void compute_equilibrium_TV(double& T, double& V);     // All in one Equilibirum solver function
@@ -66,6 +68,10 @@ class CESolver {
     inline void formJF();
 
     inline void XI_TEST();
+
+    inline bool CFD_convergence(double* dlnj);
+    inline double CFD_damping(double* dlnj, double& dlnT);
+
 };
 
 #endif
