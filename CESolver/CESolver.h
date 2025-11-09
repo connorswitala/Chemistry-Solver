@@ -18,6 +18,8 @@ class CESolver {
     void plot_concentrations_for_T_range();
 
     void compute_equilibrium(double& a, double& b);
+
+    void test(double T, double V);
     
     private:
 
@@ -31,6 +33,8 @@ class CESolver {
     int NS, NE, NI;
 
     Vector J, F, DELTA;   // Old solution vector of molar concentrations.
+    Vector XI, J_STAR;
+    int XI_SIZE, XI_ROWS;
 
     inline void compute_equilibrium_TV(double& T, double& V);     // All in one Equilibirum solver function
 
@@ -57,6 +61,11 @@ class CESolver {
 
     inline double compute_damping(double* dlnj, double& dln, double& dlnT);
 
+    inline void form_xi();
+
+    inline void formJF();
+
+    inline void XI_TEST();
 };
 
 #endif

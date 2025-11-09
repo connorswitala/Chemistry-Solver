@@ -74,42 +74,58 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
             break;
     }
 
+    J = vector<double>(J_SIZE * J_SIZE);
+    F = vector<double>(J_SIZE);
+    DELTA = vector<double>(J_SIZE);
+
+    XI_ROWS = NE*NE + NE + (gas.HAS_IONS ? (NE + 2) : 0); 
+    XI_SIZE = XI_ROWS * NS;
+    XI = vector<double>(XI_SIZE, 0.0);
+    J_STAR = vector<double>(XI_ROWS, 0.0); 
+
+
     string ions;
     if (gas.HAS_IONS) ions = " and charge constraint enforced";
     else ions = " and no charge constraint";
     cout << "-- Configuration complete. Using " << energy << " minimization with " << contraint << " held constant" << ions << endl << endl;
 }
 
-void CESolver::compute_equilibrium(double& a, double& b) {
-    (this->*equilibrium)(a, b);
-}
 
-inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
-    
+void CESolver::test(double T, double V) {
+
     bool converged = false;
-    static Vector J(J_SIZE * J_SIZE), F(J_SIZE), DELTA(J_SIZE), DlnNj(NS); 
+    Vector DlnNj(NS); 
 
     gas.V = V;
     gas.T = T;
 
     double sum;
+    double dlnt = 0.0;
+    double dlnn = 0.0;
+    double e;
 
     sum = 0.0;
     for (int j = 0; j < NS; ++j) 
-        sum += gas.X0[j];
+        sum += max(1e-6, gas.X0[j]);
+
+    gas.N_tot = sum;
 
     for (int j = 0; j < NS; ++j) {
-        gas.N[j] = max(1e-12, gas.X0[j]) / sum;
+        gas.N[j] = max(1e-6, gas.X0[j]) / sum;
     }
 
+    form_xi();
     NASA_fits();
-    // auto start = NOW;
-    
-    while (!converged) {        
+
+    while (!converged) {
 
         helm::compute_mu(gas);
-        helm::form_elemental(J.data(), F.data(), gas);
-        if (gas.HAS_IONS) helm::form_charge(J.data(), F.data(), gas);
+        // auto start = NOW;
+        XI_TEST();
+        formJF();
+        // auto end = NOW;
+        // auto duration = chrono::duration<double>(end - start);
+        // cout << "-- Forming took: " << duration.count() << " seconds" << endl;
 
         LUSolve(J.data(), F.data(), DELTA.data(), J_SIZE, 1);
 
@@ -122,13 +138,188 @@ inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
             if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE];
         }
     
-        for (int j = 0; j < NS; ++j) {
-            gas.N[j] *= exp(DlnNj[j]);
-        }
+        e = compute_damping(DlnNj.data(), dlnn, dlnt);
+        for (int j = 0; j < NS; ++j) 
+            gas.N[j] *= exp(e * DlnNj[j]);
         
-        // converged = check_convergence(DlnNj.data());   
+        
+        converged = check_convergence(DlnNj.data(), dlnn);
     }
 
+    sum = 0.0;
+    for (int j = 0; j < NS; ++j) 
+        sum += gas.N[j];
+
+    for (int j = 0; j < NS; ++j) {
+        gas.X[j] = gas.N[j] / sum;
+        gas.X0[j] = gas.N[j];
+    }
+}
+
+inline void CESolver::form_xi() {
+
+    auto A = [&](int i, int j){ return gas.a[i*NS + j]; };
+    auto q = [&](int j){ return gas.species[j].q; };
+
+    int row = 0;
+
+    // --- Top NE×NE block: a_kj * a_ij ---
+    for (int k = 0; k < NE; ++k) {
+        for (int i = 0; i < NE; ++i, ++row) {
+            const int base = row * NS;
+            for (int j = 0; j < NS; ++j)
+                XI[base + j] = A(k,j) * A(i,j);
+        }
+    }
+
+    // --- Next NE rows: a_ij ---
+    for (int i = 0; i < NE; ++i, ++row) {
+        const int base = row * NS;
+        for (int j = 0; j < NS; ++j)
+            XI[base + j] = A(i,j);
+    }
+
+    if (gas.HAS_IONS) {
+        // --- Next NE rows: a_ij * q_j ---
+        for (int i = 0; i < NE; ++i, ++row) {
+            const int base = row * NS;
+            for (int j = 0; j < NS; ++j)
+                XI[base + j] = A(i,j) * q(j);
+        }
+
+        // --- q_j row ---
+        {
+            const int base = row * NS; ++row;
+            for (int j = 0; j < NS; ++j)
+                XI[base + j] = q(j);
+        }
+
+        // --- q_j^2 row ---
+        {
+            const int base = row * NS; ++row;
+            for (int j = 0; j < NS; ++j)
+                XI[base + j] = q(j) * q(j);
+        }
+    }
+
+    // Optional sanity check in debug builds:
+    // assert(row*NS == xi_size);
+}
+
+inline void CESolver::XI_TEST() {
+
+
+    int offset1, offset2, offset3;
+    matvec_mult(XI.data(), gas.N.data(), J_STAR.data(), XI_ROWS, NS);
+
+    for (int k = 0; k < NE; ++k) {
+
+        offset1 = k * J_SIZE;
+        offset2 = k * NE;
+
+        for (int i = 0; i < NE; ++i) 
+            J[offset1 + i] = J_STAR[offset2 + i] ;
+    }
+
+    offset2 = NE * NE;
+    for (int k = 0; k < NE; ++k) 
+        F[k] = gas.b[k] - J_STAR[offset2 + k];
+    
+    if (gas.HAS_IONS) {
+
+        offset2 = NE * (NE + 1);
+        for (int k = 0; k < NE; ++k) {
+            offset1 = k * J_SIZE + NE;
+            offset3 = NE * J_SIZE;
+
+            J[offset1] = J[offset3 + k] = J_STAR[offset2 + k];
+        }
+
+        J[NE * J_SIZE + NE] = J_STAR[XI_ROWS - 1];
+        F[NE] = 0.0 - J_STAR[XI_ROWS - 2];
+    }
+}
+
+inline void CESolver::formJF() {
+
+    double sum;
+
+    for (int k = 0; k < NE; ++k) {
+        sum = 0.0;
+        for (int j = 0; j < NS; ++j) 
+            sum += gas.a[k * NS + j] * gas.N[j] * gas.mu_RT[j];
+    
+        F[k] += sum;
+    }
+
+    if (gas.HAS_IONS) {
+        sum = 0.0;
+        for (int j = 0; j < NS; ++j) 
+            sum += gas.species[j].q * gas.N[j] * gas.mu_RT[j];
+        
+        F[NE] += sum;
+    }
+}
+
+
+
+void CESolver::compute_equilibrium(double& a, double& b) {
+    (this->*equilibrium)(a, b);
+}
+
+inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
+    
+    bool converged = false;
+    static Vector DlnNj(NS); 
+
+    gas.V = V;
+    gas.T = T;
+
+    double sum;
+    double dlnn = 0.0;
+    double dlnt = 0.0;
+    double e;
+
+    sum = 0.0;
+    for (int j = 0; j < NS; ++j) 
+        sum += max(1e-6, gas.X0[j]);
+
+    for (int j = 0; j < NS; ++j) {
+        gas.N[j] = max(1e-6, gas.X0[j]) / sum;
+    }
+
+    NASA_fits();
+    // auto start = NOW;
+    
+    while (!converged) {        
+
+        // auto start = NOW;
+        helm::compute_mu(gas);
+        helm::form_elemental(J.data(), F.data(), gas);
+        if (gas.HAS_IONS) helm::form_charge(J.data(), F.data(), gas);
+        // auto end = NOW;
+        // auto duration = chrono::duration<double>(end - start);
+        // cout << "-- Forming took: " << duration.count() << " seconds" << endl;
+
+        LUSolve(J.data(), F.data(), DELTA.data(), J_SIZE, 1);
+
+        for (int j = 0; j < NS; ++j) {
+            sum = 0.0;
+            for (int i = 0; i < NE; ++i) {
+                sum += gas.a[i * NS + j] * DELTA[i];
+            }
+            DlnNj[j] = sum - gas.mu_RT[j];
+            if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE];
+        }
+    
+        e = compute_damping(DlnNj.data(), dlnn, dlnt);
+
+        for (int j = 0; j < NS; ++j) {
+            gas.N[j] *= exp(e * DlnNj[j]);
+        }
+        
+        converged = check_convergence(DlnNj.data(), dlnn); 
+    }
 
         sum = 0.0;
         for (int j = 0; j < NS; ++j) 
@@ -162,7 +353,7 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
         gas.N[j] = max(1e-12, gas.X0[j]) / sum;
     }
 
-    vector<double> J(J_SIZE * J_SIZE), F(J_SIZE), DELTA(J_SIZE), DlnNj(NS); 
+    vector<double> DlnNj(NS); 
 
     while (!converged) {   
 
@@ -224,12 +415,13 @@ inline void CESolver::compute_equilibrium_SV(double& S, double& V) {
 inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
    
     bool converged = false;
-    static Vector J(J_SIZE * J_SIZE), F(J_SIZE), DELTA(J_SIZE), DlnNj(NS); 
+    static Vector DlnNj(NS); 
 
     gas.T = T;
     gas.p = P;
 
     double sum, e, dlnT = 0.0;
+    int iteration = 0;
 
     sum = 0.0;
     for (int j = 0; j < NS; ++j) 
@@ -276,7 +468,7 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
         for (int j = 0; j < NS; ++j)
             gas.N[j] *= exp(e * DlnNj[j]);
 
-        converged = check_convergence(DlnNj.data(), DELTA[NE]);           
+        converged = check_convergence(DlnNj.data(), DELTA[NE]);         
     }
 
     sum = 0.0;

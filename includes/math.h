@@ -65,6 +65,16 @@ inline void LUSolve(double* A, const double* B, double* X, int n, int m) {
     }
 }
 
+inline void matvec_mult(const double* mat, const double* vec, double* res, int mat_rows, int mat_cols) {
+    for (int i = 0; i < mat_rows; ++i) {
+        res[i] = 0.0;
+        for (int j = 0; j < mat_cols; ++j) {
+            res[i] += mat[i * mat_cols + j] * vec[j];
+        }
+    }
+}
+
+
 inline double norm(double* v1, double* v2, int n) {
         double result = 0.0;
         for (int i = 0; i < n; ++i) {

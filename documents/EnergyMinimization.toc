@@ -26,4 +26,15 @@
 \contentsline {section}{\numberline {2}Standard State Chemical Potential Derivatives}{15}{section.2}%
 \contentsline {subsection}{\numberline {2.1}Gibbs Derivative}{15}{subsection.2.1}%
 \contentsline {subsection}{\numberline {2.2}Helmholtz Derivative}{16}{subsection.2.2}%
-\contentsline {section}{\numberline {3}Coding Tricks}{16}{section.3}%
+\contentsline {section}{\numberline {3}Matrix Method for computation of Jacobian matrix for CFD}{17}{section.3}%
+\contentsline {subsection}{\numberline {3.1}The $\xi $ matrix}{17}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Elemental Rows}{17}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Charge rows}{17}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3}RHS}{18}{subsubsection.3.1.3}%
+\contentsline {subsubsection}{\numberline {3.1.4}Full $\xi $ matrix}{18}{subsubsection.3.1.4}%
+\contentsline {subsection}{\numberline {3.2}The $\omega $ matrix}{19}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Elemental Rows}{19}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Charge Rows}{19}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Internal Energy row}{19}{subsubsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.3}RHS}{19}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Coding Tricks}{20}{section.4}%

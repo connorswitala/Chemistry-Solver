@@ -1,57 +1,91 @@
 #include "../CESolver/CESolver.h"
 #include <chrono>
-#include <random>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <string>
+#include <vector>
 
 using namespace std;
 
 int main() {
-    GasType g = GasType::AIR11;                  // Set gas type
+    GasType g = GasType::AIR11;                     // Set gas type
     ConstraintType constraint = ConstraintType::TP; // Set minimization procedure
 
-    mix gas = common_air::create_air_mix(g);    // Create gas mix
-    CESolver CE(gas, constraint);               // Construct CESolver
+    mix gas = common_air::create_air_mix(g);        // Create gas mix
+    CESolver CE(gas, constraint);                   // Construct CESolver
 
-    string filename = "../files/equilibrium_" + gas.name + ".csv";
+    // Output Tecplot file
+    string filename = "../files/equilibrium_" + gas.name + ".dat";
     ofstream write(filename);
     if (!write) {
-        cerr << "Failed to open equilibrium.csv for writing.\n";
+        cerr << "Failed to open " << filename << " for writing.\n";
         return 1;
     }
 
-    // Header: T, P, then species names from gas.species[j].name
-    write << "T,P";
-    for (int j = 0; j < gas.NS; ++j) {
-        write << ',' << gas.species[j].name;    
-    }
-    write << '\n';
+    // Sweep settings
+    double P = 101325.0;   // Pa
+    double T_min = 300.0;  // K
+    double T_max = 20000.0;// K
+    int    N     = 2000;
 
-    double T, P = 101325.0, T_base = 300.0;
-    int N = 2000;
+    // Buffers for BLOCK output
+    vector<double> Tvals(N, 0.0);
+    vector<double> Pvals(N, P);
+    vector<vector<double>> Y(gas.NS, vector<double>(N, 0.0));
 
+    // Compute equilibrium across the sweep
     auto start = chrono::high_resolution_clock::now();
+
     for (int i = 0; i < N; ++i) {
-        T = T_base + i * (20000.0 - 300.0)/N;
+        double T = T_min + (T_max - T_min) * static_cast<double>(i) / static_cast<double>(N - 1);
+        CE.compute_equilibrium(T, P);
 
-        CE.compute_equilibrium(T, P);           
-
-        write << fixed << setprecision(6) << T << ',' << P;
+        Tvals[i] = T;
         for (int j = 0; j < gas.NS; ++j) {
-            write << ',' << setprecision(8) << gas.Y[j];
+            Y[j][i] = gas.Y[j];
         }
-        write << '\n';
     }
 
     auto end = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration<double>(end - start).count();
+    const double duration = chrono::duration<double>(end - start).count();
+
+    // ===== Tecplot ASCII Header (BLOCK format) =====
+    // Title
+    write << "TITLE = \"Equilibrium TP Sweep: " << gas.name << "\"\n";
+
+    // Variables: T, P, and species mass fractions
+    write << "VARIABLES = \"T [K]\", \"P [Pa]\"";
+    for (int j = 0; j < gas.NS; ++j) {
+        write << ", \"Y(" << gas.species[j].name << ")\"";
+    }
+    write << "\n";
+
+    // One 1D zone with N points
+    write << "ZONE T=\"TP_Sweep\", I=" << N << ", F=BLOCK\n";
+
+    // Helper lambda to dump a vector with consistent formatting
+    auto dump_vec = [&](const vector<double>& v) {
+        write << scientific << setprecision(8);
+        int count = 0;
+        for (double val : v) {
+            write << val << " ";
+            // keep lines a bit shorter for readability
+            if (++count % 5 == 0) write << "\n";
+        }
+        if (count % 5 != 0) write << "\n";
+    };
+
+    // BLOCK order: all T, then all P, then each Y_j
+    dump_vec(Tvals);
+    dump_vec(Pvals);
+    for (int j = 0; j < gas.NS; ++j) dump_vec(Y[j]);
 
     write.close();
 
-    cout << "\nTotal time: " << setprecision(8) << duration
-         << " -- Time per call = " << fixed << setprecision(8) << duration / N << " s.\n\n";
-         cout << "-- File saved to " << filename << endl;
+    cout << "\nTotal time: " << fixed << setprecision(8) << duration
+         << " s  -- Time per call = " << duration / N << " s.\n"
+         << "-- Tecplot file saved to " << filename << "\n";
 
     return 0;
 }

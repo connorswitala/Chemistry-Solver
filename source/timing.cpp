@@ -11,25 +11,23 @@ int main() {
     std::mt19937 gen(rd());                     // Mersenne Twister RNG
     std::uniform_int_distribution<> distP(20000.0, 100000.0);
     std::uniform_int_distribution<> distT(300.0, 20000.0);
+    std::uniform_int_distribution<> distV(1.0, 2.0);
 
 
     GasType g = GasType::AIR11; // Set gas type
-    ConstraintType constraint = ConstraintType::TP; // Set minimization procedure
+    ConstraintType constraint = ConstraintType::TV; // Set minimization procedure
 
     mix gas = common_air::create_air_mix(g); // Create gas mix
     CESolver CE(gas, constraint);   // Construct CESolver class for minimization.
 
-    double U = 1e4;
-    double P = 101325.0;
-    double T = 300.0;
-    double V = 1.0;
+    double T, P;
+    double U, V = 1.0;
 
     int N = 500000;
     auto start = NOW;
     for (int i = 0; i < N; ++i) {
         T = distT(gen);
-        P = distP(gen);
-        CE.compute_equilibrium(T, P); // Solve minimization 
+        CE.compute_equilibrium(T, V); // Solve minimization 
     }
     
     auto end = NOW;
@@ -37,8 +35,24 @@ int main() {
 
     CE.print_properties();
 
+    cout << endl << "OLD version total time: " << setprecision(8) << duration << "-- Time per call = " << fixed << setprecision(8) << duration / N << " s." << endl << endl;
 
-    cout << endl << "Total time: " << setprecision(8) << duration << "-- Time per call = " << fixed << setprecision(8) << duration / N << " s." << endl << endl;
+    // ====================== NEW VERSION ========================
+
+    auto start1 = NOW;
+    for (int i = 0; i < N; ++i) {
+        T = distT(gen);
+        CE.test(T, V); // Solve minimization 
+    }
+    
+    auto end1 = NOW;
+    auto duration1 = chrono::duration<double>(end1 - start1).count();
+
+    CE.print_properties();
+
+    cout << endl << "OLD version total time: " << setprecision(8) << duration1 << "-- Time per call = " << fixed << setprecision(8) << duration1 / N << " s." << endl << endl;
+
+
 
     return 0;
 }

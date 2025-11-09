@@ -626,7 +626,7 @@ For convenience, they are all listed here together:
 A "simplification" can be made to the above system of equations by solving equations [\ref{HdlnNj}] for $\Delta \ln \mathcal{N}_j$:
 
 \begin{equation}
-    \textcolor{red}{\Delta \ln \mathcal{N}_j =  \sum_{i=1}^\text{NE}a_{i,j} -\frac{\mu_j}{\hat{R}T} \pi_i} \textcolor{blue}{+ q_j \pi_q}\textcolor{violet}{ + \frac{U_j^\circ}{\hat{R}T} \Delta \ln T }
+    \textcolor{red}{\Delta \ln \mathcal{N}_j =  \sum_{i=1}^\text{NE}a_{i,j}\pi_i -\frac{\mu_j}{\hat{R}T} } \textcolor{blue}{+ q_j \pi_q}\textcolor{violet}{ + \frac{U_j^\circ}{\hat{R}T} \Delta \ln T }
     \label{redH0}
 \end{equation}
 
@@ -758,6 +758,264 @@ The final derivative is:
 \begin{equation}
     \boxed{ \frac{\partial}{\partial [\ln(T)]} \left( \frac{\mu_j^0}{RT} \right) = -\frac{U_j^0}{RT} - 1}
 \end{equation}
+
+\newpage
+\section{Matrix Method for computation of Jacobian matrix for CFD}
+
+The reduced equations for Helmholtz energy minimization contains quite a large number of sums. These sums are necessary for every iteration since the sums contain $\mathcal{N}_j$, or some thermodynamic value like $H_j^\circ$. However, this can be reduced even further with the introduction of the $\boldsymbol{\xi}$ matrix, and a seperate matrix $\boldsymbol{\omega}$ which does not reduce computation time.
+\vspace{5mm}
+\\ Since each original Jacobian entry is essentially just the dot product of some vector with the $\mathcal{N}_j$ vector, we can create these matrices such that, when multiplied by the column vector $\hat{\mathcal{N}}_j$, give a resultant column vector that contains terms for the Jacobian matrix and RHS vector of the Newton-Raphson iteration. This does not speed up the computation by a lot, but it certainly gets rid of some redunancy as well as provididing some cache locality. The $\boldsymbol{\xi}$ matrix is defined as 
+
+\begin{equation}
+    \boldsymbol{\xi}(a_{ij}, q_j) \begin{bmatrix} \mathcal{N}_1 & \mathcal{N}_2 & \dots & \mathcal{N}_\text{NS} \end{bmatrix}^T = \boldsymbol{\mathcal{J}}(a_{ij}, q_j, \mathcal{N}_j)
+\end{equation}
+
+Where the variables in parenthese mean that that matrix or vector only contain sums with those variables. The $\boldsymbol{\omega}$ matrix is defined as:
+
+\begin{equation}
+    \boldsymbol{\omega}(a_{ij}, q_j, H_j^\circ) \begin{bmatrix} \mathcal{N}_1 & \mathcal{N}_2 & \dots & \mathcal{N}_\text{NS} \end{bmatrix}^T = \boldsymbol{\mathcal{J}}(a_{ij}, q_j, H_j^\circ, \mathcal{N}_j)
+\end{equation}
+
+
+These matrices will be shown for each section of the Jacobian. The number of columns of the $\boldsymbol{\xi}$ and $\boldsymbol{\omega}$ matrices is equal to the number of species of gas in the system.
+
+\subsection{The $\xi$ matrix}
+
+\subsubsection{Elemental Rows}
+
+The following matrix creates the $k^\text{th}$ row of the Jacobian matrix, where $k$ varies from 0 to NE - 1. The left hand matrix denotes which entry of the Jacobian matrix that row is associated with. There will be NE number of these stacked on top of each other:
+
+\begin{equation}
+    \begin{vmatrix}
+        J[k, 0]
+        \\ \vdots
+        \\ J[k, \text{NE - 1}]
+        \\ J[k, \text{NE}]
+    \end{vmatrix}
+    =
+    \begin{bmatrix}
+    a_{k1}a_{11} & \dots & a_{k, \text{NS}} a_{1, \text{NS}}
+    \\ \vdots & \ddots & \vdots &
+    \\ a_{k,1} a_{\text{NE}, 1} & \dots & a_{k, \text{NS}} a_{\text{NE}, \text
+    {NS}}
+    \\ a_{k,1} q_1 & \dots & a_{k, \text{NS}} q_\text{NS}
+    \end{bmatrix}
+    \begin{bmatrix}
+        \mathcal{N}_1
+        \\ \vdots
+        \\ \mathcal{N}_\text{NS}
+    \end{bmatrix}
+\end{equation}
+
+\subsubsection{Charge rows}
+
+For the charge constraint, we have:
+
+\begin{equation}
+    \begin{vmatrix}
+        J[\text{NE}, 0]
+        \\ \vdots
+        \\ J[\text{NE}, \text{NE - 1}]
+        \\ J[\text{NE}, \text{NE}]
+    \end{vmatrix}
+    =
+    \begin{bmatrix}
+    a_{11} q_1 & \dots & a_{1, \text{NS}} q_\text{NS} 
+    \\ \vdots & \ddots & \vdots &
+    \\ a_{\text{NE}, 1} q_1 & \dots & a_{\text{NE}, \text{NS}} q_\text{NS}
+    \\ q_1^2 & \dots & q_\text{NS}^2
+    \end{bmatrix}
+    \begin{bmatrix}
+        \mathcal{N}_1
+        \\ \vdots
+        \\ \mathcal{N}_\text{NS}
+    \end{bmatrix}
+\end{equation}
+
+The elemental rows has already shown up in the previous section, so we can reuse its values and therefore the only additional row is only:
+
+\begin{equation}
+    \begin{vmatrix}
+        J[\text{NE}, \text{NE}]
+    \end{vmatrix}
+    =
+    \begin{bmatrix}
+    q_1^2 & \dots & q_\text{NS}^2
+    \end{bmatrix}
+    \begin{bmatrix}
+        \mathcal{N}_1
+        \\ \vdots
+        \\ \mathcal{N}_\text{NS}
+    \end{bmatrix}
+\end{equation}
+
+With:
+
+\begin{equation}
+    \begin{vmatrix}
+        J[\text{NE}, 0]
+        \\ \vdots
+        \\ J[\text{NE}, \text{NE} - 1]
+    \end{vmatrix}
+    =
+    \begin{vmatrix}
+        J[0, \text{NE}]
+        \\ \vdots
+        \\ J[\text{NE} - 1, \text{NE}]
+    \end{vmatrix}
+\end{equation}
+
+
+\subsubsection{RHS}
+
+At the end of our $\xi$ matrix, we place two terms that arrive on the RHS, namely the dot produces of $\mathcal{N}_j$ with elemental and charges. Therefore we get:
+
+\begin{equation}
+    \begin{vmatrix}
+        \text{RHS}[\text{i}]
+        \\ \vdots
+        \\ \text{RHS}[\text{NE - 1}]
+        \\ \text{RHS}[\text{NE}]
+    \end{vmatrix}
+    =
+    \begin{bmatrix}
+    a_{11} & \dots & a_{1, \text{NS}}
+    \\ \vdots & \ddots & \vdots &
+    \\ a_{\text{NE}, 1} & \dots & a_{\text{NE}, \text{NS}}
+    \\ q_1 & \dots & q_\text{NS}
+    \end{bmatrix}
+    \begin{bmatrix}
+        \mathcal{N}_1
+        \\ \vdots
+        \\ \mathcal{N}_\text{NS}
+    \end{bmatrix}
+\end{equation}
+
+
+\subsubsection{Full $\xi$ matrix}
+
+The full size of the $\xi$ matrix is $[\text{NE}^2 + \text{NE} + \eta(\text{NE} + 2)] \cdot \text{NS}$, where $\eta$ equals 0 for no ionization, and 1 for ionization. For 5-species air, this is a 30 entry matrix. For 11 species air with 2 elements, this is a 111 element matrix. Here, all charge entries have been brough to the bottom for easy indexing.
+
+\begin{equation}
+    \boldsymbol{\xi} \mathcal{N} = 
+    \begin{bmatrix}
+        a_{k1}a_{11} & \dots & a_{k, \text{NS}} a_{1, \text{NS}}
+        \\ \vdots & \ddots & \vdots
+        \\ a_{k,1} a_{\text{NE}, 1} & \dots & a_{k, \text{NS}} a_{\text{NE}, \text{NS}}
+        \\ \vdots & \ddots & \vdots
+        \\ a_{\text{NE}, 1}a_{11} & \dots & a_{\text{NE}, \text{NS}} a_{1, \text{NS}}
+        \\ \vdots & \ddots & \vdots &
+        \\ a_{\text{NE}, 1} a_{\text{NE}, 1} & \dots & a_{\text{NE}, \text{NS}} a_{\text{NE}, \text{NS}}
+        \\ a_{11} & \dots & a_{1, \text{NS}}
+        \\ \vdots & \ddots & \vdots &
+        \\ a_{\text{NE}, 1} & \dots & a_{\text{NE}, \text{NS}}
+        \\ a_{k,1} q_1 & \dots & a_{k, \text{NS}} q_\text{NS}
+        \\ \vdots & \ddots & \vdots &
+        \\ a_{\text{NE}, 1} q_1 & \dots & a_{\text{NE}, \text{NS}} q_\text{NS}
+        \\ q_1 & \dots & q_\text{NS}
+        \\ q_1^2 & \dots & q_\text{NS}^2
+    \end{bmatrix}    
+    \begin{bmatrix}
+        \mathcal{N}_1
+        \\ \vdots
+        \\ \mathcal{N}_i
+        \\ \vdots
+        \\ \mathcal{N}_\text{NS}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        \text{RHS}[k \cdot \text{NE}]
+        \\ \vdots
+        \\ \text{RHS}[k \cdot \text{NE} + (NE - 1)]
+        \\ \vdots
+        \\ \text{RHS}[(\text{NE} - 1) \text{NE}]
+        \\ \vdots
+        \\ \text{RHS}[(\text{NE} - 1) \text{NE} + \text{NE} - 1]
+        \\ \text{RHS}[\text{NE} \cdot \text{NE}]
+        \\ \vdots
+        \\ \text{RHS}[\text{NE} \cdot \text{NE} + \text{NE} - 1]
+        \\ \text{RHS}[\text{NE} \cdot (\text{NE} + 1)]
+        \\ \vdots
+        \\ \text{RHS}[\text{NE} \cdot (\text{NE} + 1) + \text{NE} - 1]
+        \\ \text{RHS}[\text{NE} \cdot (\text{NE} + 2)]
+        \\ \text{RHS}[\text{NE} \cdot (\text{NE} + 2) + 1]
+    \end{bmatrix}
+\end{equation}
+
+
+
+\subsection{The $\omega$ matrix}
+
+The $\omega$ matrix is dedicated to terms that cant be created at the start of the loop and the left as constants. These need to be updated since they are temperature dependant and temperature varies in our iterations.
+\vspace{5mm}
+\\ For Helmholtz minimization we use $U_j^\circ / \hat{R}T$ which is calculated as $H_j^\circ / \hat{R}T - 1$. We can split many terms inside sums (such as the elemental one) as:
+
+\begin{equation}
+    a_{kj} \left( \frac{H_j^\circ}{\hat{R}T} - 1 \right) \mathcal{N}_j = a_{kj} \frac{H_j^\circ}{\hat{R}T} \mathcal{N}_j - a_{kj} \mathcal{N}_j  
+\end{equation}
+
+Then, using the linearity of sums, the summation over species becomes:
+
+\begin{equation}
+    \sum_{j}^\text{NS} \left[a_{kj} \frac{H_j^\circ}{\hat{R}T} \mathcal{N}_j - a_{kj} \mathcal{N}_j \right]  = \boxed{\sum_{j}^\text{NS} a_{kj} \frac{H_j^\circ}{\hat{R}T} \mathcal{N}_j - \sum_{j=1} ^\text{NS} a_{kj} \mathcal{N}_j}
+\end{equation}
+
+This allows us so computational savings since we have already calculated the negative term in the $\xi$ matrix.
+
+\subsubsection{Elemental Rows}
+
+The first NE rows of this matrix looks like:
+
+\begin{equation}
+    \begin{bmatrix}
+        a_{k1} H_1^\circ \ \hat{R}T & \dots & a_{k, \text{NS}} H_\text{NS}^\circ
+        \\ \vdots & \ddots & \vdots
+        \\ a_{\text{NE}, 1}, H_1^\circ \ \hat{R}T & \dots & a_{\text{NE}, \text{NS}} H_\text{NS}^\circ
+    \end{bmatrix}
+\end{equation}
+
+\subsubsection{Charge Rows}
+
+\begin{equation}
+    \begin{bmatrix}
+        q_1 H_1^\circ / \hat{R}T & \dots & q_\text{NS} H_\text{NS}^\circ / \hat{R}T
+    \end{bmatrix}
+\end{equation}
+
+
+\subsubsection{Internal Energy row}
+
+\begin{equation}
+    \begin{bmatrix}
+        a_{i1} H_1^\circ \ \hat{R}T & \dots & a_{i, \text{NS}} H_\text{NS}^\circ
+        \\ \vdots & \ddots & \vdots
+        \\ a_{\text{NE}, 1}, H_1^\circ \ \hat{R}T & \dots & a_{\text{NE}, \text{NS}} H_\text{NS}^\circ
+        \\ q_1 H_1^\circ / \hat{R}T & \dots & q_\text{NS} H_\text{NS}^\circ / \hat{R}T
+        \\ H_1^\circ / \hat{R}T & \dots & H_\text{NS}^\circ / \hat{R}T
+        \\ (H_1^\circ / \hat{R}T)^2 & \dots & (H_\text{NS}^\circ / \hat{R}T)^2
+        \\ c_{p,1}^\circ / \hat{R} - 1 & \dots & c_{p,\text{NS}}^\circ / \hat{R} - 1
+    \end{bmatrix}
+\end{equation}
+
+Of course, we note again that the first NE + 1 rows have already been calcualted, so we can reuse their values. Therefore the system is only:
+
+
+\begin{equation}
+    \begin{bmatrix}
+        H_1^\circ / \hat{R}T & \dots & H_\text{NS}^\circ / \hat{R}T
+        \\ (H_1^\circ / \hat{R}T)^2 & \dots & (H_\text{NS}^\circ / \hat{R}T)^2
+        \\ c_{p,1}^\circ / \hat{R} - 1 & \dots & c_{p,\text{NS}}^\circ / \hat{R} - 1
+    \end{bmatrix}
+\end{equation}
+
+
+\subsection{RHS}
+
+Many terms that show up on the RHS are calculated from temperature dependant variables.
+
+
+
+
 
 \section{Coding Tricks}
 

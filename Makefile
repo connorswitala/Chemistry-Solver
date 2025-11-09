@@ -16,20 +16,24 @@ SOLVER_SRC     	:= $(SOLVER_DIR)/CESolver.cpp
 MIN_SRC			:= $(SRC_DIR)/minimize.cpp
 PLOT_SRC		:= $(SRC_DIR)/plot_composition.cpp
 TIMING_SRC		:= $(SRC_DIR)/timing.cpp
+TEST_SRC		:= $(SRC_DIR)/test.cpp
+
 # Objects
 COMMON_AIR_OBJ 	:= $(BUILD_DIR)/commonMixes.o
 SOLVER_OBJ     	:= $(BUILD_DIR)/CESolver.o
 MIN_OBJ   		:= $(BUILD_DIR)/minimize.o
 PLOT_OBJ   		:= $(BUILD_DIR)/plot.o
 TIMING_OBJ   	:= $(BUILD_DIR)/timing.o
+TEST_OBJ   		:= $(BUILD_DIR)/test.o
 
 # Targets
 MIN_TARGET := $(BIN_DIR)/minimize
 PLOT_TARGET := $(BIN_DIR)/plot
 TIMING_TARGET := $(BIN_DIR)/timing
+TEST_TARGET := $(BIN_DIR)/test
 
 # ===== Targets =====
-all: $(MIN_TARGET) $(PLOT_TARGET)
+all: $(MIN_TARGET) $(PLOT_TARGET) $(TIMING_TARGET) $(TEST_TARGET)
 
 # Create build directory if missing
 $(BUILD_DIR):
@@ -51,6 +55,9 @@ $(PLOT_OBJ): $(PLOT_SRC) | $(BUILD_DIR)
 $(TIMING_OBJ): $(TIMING_SRC) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+$(TEST_OBJ): $(TEST_SRC) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 # Link final executable
 $(MIN_TARGET): $(COMMON_AIR_OBJ) $(SOLVER_OBJ) $(MIN_OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@
@@ -61,8 +68,11 @@ $(PLOT_TARGET): $(COMMON_AIR_OBJ) $(SOLVER_OBJ) $(PLOT_OBJ)
 $(TIMING_TARGET): $(COMMON_AIR_OBJ) $(SOLVER_OBJ) $(TIMING_OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
+$(TEST_TARGET): $(COMMON_AIR_OBJ) $(SOLVER_OBJ) $(TEST_OBJ)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
 # Clean up
 clean:
-	rm -rf $(BUILD_DIR) $(TEST_TARGET)
+	rm -rf $(BUILD_DIR)
 
 .PHONY: all clean
