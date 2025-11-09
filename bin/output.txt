@@ -1,0 +1,28 @@
+
+-- 11 species air mix created. Contains: N2, O2, NO, N, O, N2+, O2+, N+, O+, NO+, e-, 
+-- Configuration complete. Using Helmholtz minimization with temperature and volume held constant and charge constraint enforced
+
+Iterations = 13
+
+         Mixture Temperature: 5000 [K]
+            Mixture Pressure: 4.94066e-324 [kPa]
+
+                               ====: Species Molar Fractions :==== 
+        N2: 0.6092	        O2: 0.0012	        NO: 0.0134	         N: 0.0360	
+         O: 0.3401	       N2+: 0.0000	       O2+: 0.0000	        N+: 0.0000	
+        O+: 0.0000	       NO+: 0.0001	        e-: 0.0001	
+Total time: 0.00004690
+
+-- 11 species air mix created. Contains: N2, O2, NO, N, O, N2+, O2+, N+, O+, NO+, e-, 
+-- Configuration complete. Using Helmholtz minimization with temperature and volume held constant and charge constraint enforced
+
+Iterations = 13
+
+         Mixture Temperature: 5000 [K]
+            Mixture Pressure: 6.95202e-313 [kPa]
+
+                               ====: Species Molar Fractions :==== 
+        N2: 0.6092	        O2: 0.0012	        NO: 0.0134	         N: 0.0360	
+         O: 0.3401	       N2+: 0.0000	       O2+: 0.0000	        N+: 0.0000	
+        O+: 0.0000	       NO+: 0.0001	        e-: 0.0001	
+Total time: 0.00003600
