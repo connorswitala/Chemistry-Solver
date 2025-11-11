@@ -70,7 +70,6 @@ class CESolver {
     inline void XI_TEST();
 
     inline bool CFD_convergence(double* dlnj);
-    inline double CFD_damping(double* dlnj, double& dlnT);
 
 };
 

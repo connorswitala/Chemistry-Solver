@@ -15,6 +15,7 @@ struct SpeciesInfo {
     double mw;          // Molecular weight of species
     Vector poly;        // NASA polynomial coefficients
     int q;              // Charge of species
+    double hf;
 };
 
 struct mix {
@@ -30,9 +31,10 @@ struct mix {
     //                                                                                  |
     // =================================================================================
 
-    Vector H0_RT, S0_R, mu0_RT, CP0_R;  // NASA polynomial
+    Vector H0_RT, S0_R, mu0_RT, CP0_R, U0_RT;  // NASA polynomial
     double up, hp, sp, uo, ho, so;  // Used for specification of enthalpy, internal energy, and entropy.
     double N_tot;
+    double e_ref;
     Vector X0;                      // Initial Moles of air.
     Vector a, b;                    // Stoichiometric coefficients / number of moles of element i 
     Vector N, mu_RT;                // Current solution for number of moles as well as chemical potential.

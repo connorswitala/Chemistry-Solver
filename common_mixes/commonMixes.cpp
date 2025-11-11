@@ -17,6 +17,7 @@ namespace common_air {
             -9.705954110e-11, 1.437538881e-15, 4.938707040e+06, -1.672099740e+03
         },
         0,
+        0.0,
     };
 
     SpeciesInfo O2 {
@@ -32,7 +33,8 @@ namespace common_air {
             4.975294300e+08, -2.866106874e+05, 6.690352250e+01, -6.169959020e-03, 3.016396027e-07,
             -7.421416600e-12, 7.278175770e-17, 2.293554027e+06, -5.530621610e+02
         },
-          0,
+        0,
+        0.0
     };
 
     SpeciesInfo NO {
@@ -48,7 +50,8 @@ namespace common_air {
             -9.575303540e+08, 5.912434480e+05, -1.384566826e+02, 1.694339403e-02, -1.007351096e-06,
             2.912584076e-11, -3.295109350e-16, -4.677501240e+06, 1.242081216e+03
         },
-           0,
+        0,
+        91271.310 * 1000.0
     };
 
     SpeciesInfo N {
@@ -65,6 +68,7 @@ namespace common_air {
             -1.098367709e-11, 1.277986024e-16, 2.550585618e+06, -5.848769753e+02
         },
         0,
+        472680.000 * 1000.0
     };
 
     SpeciesInfo O {
@@ -81,6 +85,7 @@ namespace common_air {
             -5.796231540e-12, 7.191720164e-17, 8.890942630e+05, -2.181728151e+02
         },
         0,
+        249175.003 * 1000.0
     };
 
     SpeciesInfo Ar {
@@ -97,6 +102,7 @@ namespace common_air {
             6.531938460e-11, -9.740147729e-16, -5.078300340e+06, 1.465298484e+03
         },
         0,
+        0.0
     };
 
     SpeciesInfo Ar_ion {
@@ -113,6 +119,7 @@ namespace common_air {
             -1.201637769e-12, 2.299206903e-17, 2.349504137e+05, -1.032262257e+01
         },
         1,
+        1526778.407 * 1000.0
     };
 
     SpeciesInfo N_ion {
@@ -129,6 +136,7 @@ namespace common_air {
             -2.691430863e-13, 3.539931593e-18, 3.136284696e+05, -1.706646380e+01
         },
         1,
+        1882127.624 * 1000.0
     };
 
     SpeciesInfo O_ion {
@@ -145,6 +153,7 @@ namespace common_air {
             9.186834870e-12, -1.074163268e-16, -9.614208960e+05, 3.426193080e+02
         },
         1,
+        1568787.228 * 1000.0
     };
   
     SpeciesInfo NO_ion {
@@ -161,6 +170,7 @@ namespace common_air {
             -1.963208212e-10, 2.805268230e-15, 1.443308939e+07, -4.324044462e+03
         },
         1,
+        990809.704 * 1000.0
     };
 
     SpeciesInfo N2_ion{
@@ -177,6 +187,7 @@ namespace common_air {
             4.144441230e-11, -5.621893090e-16, -2.217361867e+06, 8.436270947e+02
         },
         1, 
+        1509508.424 * 1000.0
     };
 
     SpeciesInfo O2_ion{
@@ -193,6 +204,7 @@ namespace common_air {
             1.167968599e-10, -1.589754791e-15, -8.857866270e+06, 2.852035602e+03
         },
         1,
+        1171828.436 * 1000.0
     };
 
     SpeciesInfo e_ion {
@@ -209,6 +221,7 @@ namespace common_air {
             0.000000000e+00, 0.000000000e+00, -7.453750000e+02, -1.172081224e+01,
         },
         -1,
+        0.0
     };
 
     mix create_air_mix(GasType gastype) {
@@ -256,6 +269,7 @@ namespace common_air {
         air.HAS_IONS = false;
 
         air.H0_RT = vector<double>(air.NS);
+        air.U0_RT = vector<double>(air.NS);
         air.S0_R = vector<double>(air.NS);
         air.mu0_RT = vector<double>(air.NS);
         air.CP0_R = vector<double>(air.NS);
@@ -301,6 +315,7 @@ namespace common_air {
         air.HAS_IONS = true;
 
         air.H0_RT = vector<double>(air.NS);
+        air.U0_RT = vector<double>(air.NS);
         air.S0_R = vector<double>(air.NS);
         air.mu0_RT = vector<double>(air.NS);
         air.CP0_R = vector<double>(air.NS);
@@ -346,6 +361,7 @@ namespace common_air {
         air.HAS_IONS = true;
 
         air.H0_RT = vector<double>(air.NS);
+        air.U0_RT = vector<double>(air.NS);
         air.S0_R = vector<double>(air.NS);
         air.mu0_RT = vector<double>(air.NS);
         air.CP0_R = vector<double>(air.NS);
@@ -393,6 +409,7 @@ namespace common_air {
         air.HAS_IONS = true;
 
         air.H0_RT = vector<double>(air.NS);
+        air.U0_RT = vector<double>(air.NS);
         air.S0_R = vector<double>(air.NS);
         air.mu0_RT = vector<double>(air.NS);
         air.CP0_R = vector<double>(air.NS);
@@ -439,6 +456,7 @@ namespace common_air {
         air.HAS_IONS = true;
 
         air.H0_RT = vector<double>(air.NS);
+        air.U0_RT = vector<double>(air.NS);
         air.S0_R = vector<double>(air.NS);
         air.mu0_RT = vector<double>(air.NS);
         air.CP0_R = vector<double>(air.NS);

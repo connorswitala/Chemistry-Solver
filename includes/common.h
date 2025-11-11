@@ -12,7 +12,7 @@
 #include<chrono>
 #include<fstream>
 
-constexpr double gcon = 8.314462;       // Universal gas constant: Joules / mol-Kelvin
+constexpr double gcon = 8314.462;       // Universal gas constant: Joules / mol-Kelvin
 constexpr double bcon = 1.380649e-23;   // Boltzmann constant: Joules / Kelvin
 constexpr double acon  = 6.022140e23;   // Avogradro's constant: 1/mol 
 

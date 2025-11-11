@@ -165,10 +165,10 @@ namespace gibbs {
 namespace helm {
 
     inline void compute_mu(mix& gas) {
-        double Rp = gcon*(1.0e-5);
+        double pb = gcon * gas.rho * gas.T * (1.0e-5);
 
         for (int j = 0; j < gas.NS; ++j) {
-            gas.mu_RT[j] = gas.mu0_RT[j] + log(gas.N[j] * Rp * gas.T / gas.V);
+            gas.mu_RT[j] = gas.mu0_RT[j] + log(gas.N[j] * pb);
         }
     }
 
@@ -184,8 +184,8 @@ namespace helm {
         double akj_N_sum;
 
         int offset;
-
         vector<double> akj_N(NS);
+
         for (int k = 0; k < NE; ++k) {
 
             offset = k * J_SIZE;
@@ -264,17 +264,7 @@ namespace helm {
         for (int j = 0; j < NS; ++j) 
             sum += qj_Nj[j] * gas.mu_RT[j];
 
-        F[NE] = sum - qjNj_sum;
-
-        // Add charge column in ln(T) row is present.
-        if (gas.NEEDS_T) {
-
-            sum = 0.0;
-            for (int j = 0; j < NS; ++j)
-                sum += qj_Nj[j] * (gas.H0_RT[j] - 1.0);
-                
-            J[(J_SIZE - 1) * J_SIZE + NE] = sum;
-        }        
+        F[NE] = sum - qjNj_sum;     
     }
 
     // This function forms the entries in J and F for the U contraint.
@@ -293,7 +283,7 @@ namespace helm {
 
         // Importans sum terms
         for (int j = 0; j < NS; ++j) {
-            Uj_Nj[j] = gas.N[j] * (gas.H0_RT[j] - 1.0);
+            Uj_Nj[j] = gas.N[j] * gas.U0_RT[j];
         }
 
         // ln(T) column in elemental rows
@@ -305,7 +295,7 @@ namespace helm {
             J[k * J_SIZE + idx] = sum;
         }
 
-        // ln(T) term in charge constraint row
+        // ln(T) term in charge constraint row and charge constrain in ln(T) row
         if (gas.HAS_IONS) {
 
             sum = 0.0;
@@ -314,6 +304,7 @@ namespace helm {
             }  
 
             J[NE * J_SIZE + NE + 1] = sum;
+            J[(J_SIZE - 1) * J_SIZE + NE] = sum;
         }
 
 
@@ -331,7 +322,7 @@ namespace helm {
         sum = 0.0;
         sum1 = 0.0;
         for (int j = 0; j < NS; ++j) {
-            sum += Uj_Nj[j] * (gas.H0_RT[j] - 1.0);
+            sum += Uj_Nj[j] * gas.U0_RT[j];
             sum1 += gas.N[j] * (gas.CP0_R[j] - 1.0);
         }
 
@@ -341,7 +332,7 @@ namespace helm {
         for (int j = 0; j < NS; ++j) 
             sum += Uj_Nj[j] * gas.mu_RT[j];
 
-        F[J_SIZE - 1] = (gas.uo - gas.up) / (gcon * gas.T) + sum;
+        F[J_SIZE - 1] = (gas.uo - gas.e_ref) / (gcon * gas.T) - gas.up + sum;
     }
 
 
