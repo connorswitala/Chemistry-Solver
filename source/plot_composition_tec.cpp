@@ -9,8 +9,8 @@
 using namespace std;
 
 int main() {
-    GasType g = GasType::AIR11;                     // Set gas type
-    ConstraintType constraint = ConstraintType::TP; // Set minimization procedure
+    GasType g = GasType::AIR5;                     // Set gas type
+    ConstraintType constraint = ConstraintType::UV; // Set minimization procedure
 
     mix gas = common_air::create_air_mix(g);        // Create gas mix
     CESolver CE(gas, constraint);                   // Construct CESolver
@@ -24,24 +24,22 @@ int main() {
     }
 
     // Sweep settings
-    double P = 101325.0;   // Pa
-    double T_min = 300.0;  // K
-    double T_max = 20000.0;// K
-    int    N     = 2000;
+    double V = 1.0/1.225;   // Pa
+    double e_min = 5e5;  // K
+    int    N     = 20000;
 
     // Buffers for BLOCK output
     vector<double> Tvals(N, 0.0);
-    vector<double> Pvals(N, P);
     vector<vector<double>> Y(gas.NS, vector<double>(N, 0.0));
 
     // Compute equilibrium across the sweep
     auto start = chrono::high_resolution_clock::now();
 
     for (int i = 0; i < N; ++i) {
-        double T = T_min + (T_max - T_min) * static_cast<double>(i) / static_cast<double>(N - 1);
-        CE.compute_equilibrium(T, P);
+        double e = e_min + i * (1.3e7 - e_min) / (N - 1);
+        CE.compute_equilibrium(e, V);
 
-        Tvals[i] = T;
+        Tvals[i] = gas.T;
         for (int j = 0; j < gas.NS; ++j) {
             Y[j][i] = gas.Y[j];
         }
@@ -55,7 +53,7 @@ int main() {
     write << "TITLE = \"Equilibrium TP Sweep: " << gas.name << "\"\n";
 
     // Variables: T, P, and species mass fractions
-    write << "VARIABLES = \"T [K]\", \"P [Pa]\"";
+    write << "VARIABLES = \"T [K]\"";
     for (int j = 0; j < gas.NS; ++j) {
         write << ", \"Y(" << gas.species[j].name << ")\"";
     }
@@ -78,7 +76,6 @@ int main() {
 
     // BLOCK order: all T, then all P, then each Y_j
     dump_vec(Tvals);
-    dump_vec(Pvals);
     for (int j = 0; j < gas.NS; ++j) dump_vec(Y[j]);
 
     write.close();

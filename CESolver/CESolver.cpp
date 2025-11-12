@@ -91,7 +91,6 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
     cout << "-- Configuration complete. Using " << energy << " minimization with " << contraint << " held constant" << ions << endl << endl;
 }
 
-
 void CESolver::CFD_equilibrium(double T, double V) {
 
     bool converged = false;
@@ -333,9 +332,11 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
     double dlnn = 0.0;
     double e;
 
+    int iteration = 0;
+
     sum = 0.0;
     for (int j = 0; j < NS; ++j)
-        sum += gas.X0[j];
+        sum += max(1e-12, gas.X0[j]);
 
     for (int j = 0; j < NS; ++j) {
         gas.N[j] = max(1e-12, gas.X0[j]) / sum;
@@ -349,10 +350,8 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
 
         // Compute u'
         gas.up = 0.0;
-        gas.e_ref = 0.0;
         for (int j = 0; j < NS; ++j) {
-            gas.up += gas.N[j] * gas.U0_RT[j];
-            gas.e_ref += gas.N[j] * gas.species[j].hf;
+            gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href);
         }
 
         // Form matrix system
@@ -374,32 +373,37 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
             if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE];
         }
 
-
         e = compute_damping(DlnNj.data(), dlnn, DELTA[J_SIZE - 1]);
         // Get new temperature
         gas.T *= exp(e * DELTA[J_SIZE - 1]);
-        cout << "T = " << gas.T << endl;
 
         // Get new moles
         for (int j = 0; j < NS; ++j) {
             gas.N[j] *= exp(e * DlnNj[j]);
         }
 
+        cout << setprecision(2) << gas.T << "\t" << gas.uo << "\t" << gas.up << endl;
+
+        iteration++;
         // Check convergence
         converged = check_convergence(DlnNj.data(), dlnn);
-        if (fabs(DELTA[J_SIZE - 1]) > 1.0e-4) converged = false;
+        // if (fabs(DELTA[J_SIZE - 1]) > 1.0e-4) converged = false;
         if (fabs((gas.up - gas.uo) / (gcon * gas.T) >= 0.5e-4)) converged = false;
     }
 
     // Get final molar concentrations
-    sum = 0.0;
+    gas.N_tot = 0.0;
     for (int j = 0; j < NS; ++j)
-        sum += gas.N[j];
+        gas.N_tot += gas.N[j];
 
     for (int j = 0; j < NS; ++j) {
-        gas.X[j] = gas.N[j] / sum;
+        gas.X[j] = gas.N[j] / gas.N_tot;
         gas.X0[j] = gas.N[j];
     }
+
+    cout << "N_tot = " << gas.N_tot << endl;
+
+    compute_mass_fractions();
 }
 
 inline void CESolver::compute_equilibrium_SV(double& S, double& V) {
@@ -437,15 +441,6 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
 
         LUSolve(J.data(), F.data(), DELTA.data(), J_SIZE, 1);
 
-        // cout << "========" << endl;
-        // for (int i = 0; i < J_SIZE; ++i) {
-        //     for (int j = 0; j < J_SIZE; ++j) {
-        //         cout << J[i * J_SIZE + j] << "\t";
-        //     }
-        //     cout << "|" << F[i] << "\t|" << DELTA[i] << endl;
-        // }
-        // cout << "========" << endl;
-
         for (int j = 0; j < NS; ++j) {
             sum = 0.0;
             for (int i = 0; i < NE; ++i) {
@@ -467,12 +462,18 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
 
     gas.N_tot = 0.0;
     for (int j = 0; j < NS; ++j)
-        gas.N_tot += gas.N[j];
+            gas.N_tot += gas.N[j];
 
     for (int j = 0; j < NS; ++j) {
         gas.X[j] = gas.N[j] / gas.N_tot;
         gas.X0[j] = gas.N[j];
     }
+
+    gas.up = 0.0;
+    for (int j = 0; j < NS; ++j) {
+        gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href * 1000.0);
+    }
+
     compute_mass_fractions();
 }
 
@@ -533,6 +534,7 @@ inline void CESolver::NASA_fits() {
                    + 0.25 * coeff[5] * Ts[5]
                    + 0.2 * coeff[6] * Ts[6]
                    + coeff[7] * Ts[1];
+                  
 
         // Standard state entropy                   
         gas.S0_R[j] = - 0.5 * coeff[0] * Ts[0]
@@ -580,6 +582,7 @@ void CESolver::print_properties() {
     cout << endl << setw(30) << "Mixture Temperature: " << gas.T << " [K]" << endl;
     cout << setw(30) << "Mixture Pressure: " << gas.p / 1000.0 << " [kPa]" << endl;
     cout << setw(30) << "Mixture Volume: " << gas.V << " [kPa]" << endl;
+    cout << setw(30) << "Mixture Internal Energy: " << gas.up / 1000.0 << " [kJ/kg]" << endl;
     // cout << setw(30) << "Mixture Density: " << gas.rho << " [kg/m^3]" << endl;
     // cout << setw(30) << "Mixture Internal Energy: " << gas.e / 1000.0 << " [kJ/kg]" << endl;
     // cout << setw(30) << "Mixture Gas Constant: " << gas.R << " [J/kg-K]" << endl;

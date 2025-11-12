@@ -1,9 +1,5 @@
-# TODO Plan for reorganization
+# TODO Plan
 
+Need to find a way to calculate mass specific quantities.
 
-
-## Matrix solve
-
-Currently uses LU solver. It doesn't seem horrible slow, on the order of 1e-7 seconds. INCE takes longer than this on average.
-
-##
+U_h^0 = H_j^0 - R_j*T 

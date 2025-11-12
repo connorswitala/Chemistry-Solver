@@ -16,6 +16,7 @@ struct SpeciesInfo {
     Vector poly;        // NASA polynomial coefficients
     int q;              // Charge of species
     double hf;
+    double href;
 };
 
 struct mix {

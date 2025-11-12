@@ -332,7 +332,7 @@ namespace helm {
         for (int j = 0; j < NS; ++j) 
             sum += Uj_Nj[j] * gas.mu_RT[j];
 
-        F[J_SIZE - 1] = (gas.uo - gas.e_ref) / (gcon * gas.T) - gas.up + sum;
+        F[J_SIZE - 1] = (gas.uo - gas.up) / (gcon * gas.T) + sum;
     }
 
 
