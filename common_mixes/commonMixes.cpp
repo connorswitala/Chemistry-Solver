@@ -294,17 +294,15 @@ namespace common_air {
         air.cv = air.R/(air.gamma - 1.0);
         air.cp = air.gamma * air.cv;
 
-        air.X0 = { 0.7808, 0.2192, 0.0, 0.0, 0.0};
+        air.X0 = { 0.0, 0.0, 0.0, 0.7572, 0.2428};
 
-        air.a = {2, 0, 1, 1, 0,   // N
-                 0, 2, 1, 0, 1};  // O
+        air.a = {28.0134, 0.0, 14.0067, 14.0067, 0.0,   // N
+                 0.0, 31.9987, 15.9994, 0.0,  15.9994};  // O
+ 
 
         air.b = vector<double>(air.NE, 0.0);         
-        for (int i = 0; i < air.NE; ++i) {
-            for (int j = 0; j < air.NS; ++j) {
-                air.b[i] += air.a[i * air.NS + j] * air.X0[j];
-            }
-        }
+        air.b[0] = 0.7572;
+        air.b[1] = 0.2428;
 
         cout << endl << "-- " << air.NS << " species air mix created. Contains: ";
         for (int i = 0; i < air.NS; ++i) cout << air.species[i].name << ", ";

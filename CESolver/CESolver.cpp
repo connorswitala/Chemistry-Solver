@@ -330,16 +330,16 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
 
     double sum;
     double dlnn = 0.0;
-    double e;
+    double e, rlntot;
 
     int iteration = 0;
 
-    sum = 0.0;
-    for (int j = 0; j < NS; ++j)
-        sum += max(1e-12, gas.X0[j]);
-
+    gas.T = 3800;
+    
+    gas.N_tot = 0.0;
     for (int j = 0; j < NS; ++j) {
-        gas.N[j] = max(1e-12, gas.X0[j]) / sum;
+        gas.N[j] = 0.1 / NS;
+        gas.N_tot += gas.N[j];
     }
 
     vector<double> DlnNj(NS);
@@ -351,7 +351,7 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
         // Compute u'
         gas.up = 0.0;
         for (int j = 0; j < NS; ++j) {
-            gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href);
+            gas.up += gas.N[j] * gas.U0_RT[j];
         }
 
         // Form matrix system
@@ -363,38 +363,45 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
         // Solve matrix system
         LUSolve(J.data(), F.data(), DELTA.data(), J_SIZE, 1);
 
+        rlntot = 0.0;
+
         // Reform Dln(N_j)
         for (int j = 0; j < NS; ++j) {
-            sum = 0.0;
+            DlnNj[j] =  gas.U0_RT[j] * DELTA[J_SIZE - 1] - gas.mu_RT[j];
             for (int i = 0; i < NE; ++i) {
-                sum += gas.a[i * NS + j] * DELTA[i];
+                DlnNj[j] += gas.a[i * NS + j] * DELTA[i];
             }
-            DlnNj[j] = sum + gas.U0_RT[j] * DELTA[J_SIZE - 1] - gas.mu_RT[j];
             if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE];
+            rlntot += gas.N[j] * DlnNj[j];
         }
 
-        e = compute_damping(DlnNj.data(), dlnn, DELTA[J_SIZE - 1]);
+        rlntot /= gas.N_tot;
+
+        e = compute_damping(DlnNj.data(), rlntot, DELTA[J_SIZE - 1]);
+
+        gas.N_tot = 0.0;
+        for (int j = 0; j < NS; ++j) {
+            gas.N[j] = max(gas.N[j] * exp(e *DlnNj[j]), 1e-18);
+            gas.N_tot += gas.N[j];
+        }
+
+
         // Get new temperature
         gas.T *= exp(e * DELTA[J_SIZE - 1]);
 
-        // Get new moles
-        for (int j = 0; j < NS; ++j) {
-            gas.N[j] *= exp(e * DlnNj[j]);
-        }
-
-        cout << setprecision(2) << gas.T << "\t" << gas.uo << "\t" << gas.up << endl;
 
         iteration++;
         // Check convergence
         converged = check_convergence(DlnNj.data(), dlnn);
-        // if (fabs(DELTA[J_SIZE - 1]) > 1.0e-4) converged = false;
-        if (fabs((gas.up - gas.uo) / (gcon * gas.T) >= 0.5e-4)) converged = false;
+        if (fabs(DELTA[J_SIZE - 1]) > 1.0e-4) converged = false;
+        if (fabs(gas.up - (gas.uo) / (gcon * gas.T) >= 0.5e-4)) converged = false;
     }
 
     // Get final molar concentrations
-    gas.N_tot = 0.0;
-    for (int j = 0; j < NS; ++j)
-        gas.N_tot += gas.N[j];
+
+    // gas.N_tot = 0.0;
+    // for (int j = 0; j < NS; ++j) 
+    //     gas.N_tot += gas.N[j];
 
     for (int j = 0; j < NS; ++j) {
         gas.X[j] = gas.N[j] / gas.N_tot;
@@ -471,7 +478,7 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
 
     gas.up = 0.0;
     for (int j = 0; j < NS; ++j) {
-        gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href * 1000.0);
+        gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href);
     }
 
     compute_mass_fractions();
@@ -598,11 +605,11 @@ void CESolver::print_properties() {
         if ((i + 1) % 4 == 0) cout << endl;
     }
 
-    // cout << endl << endl << setw(67) <<  "====: Species Mass Fractions :==== " << endl;
-    // for (int i = 0; i < NS; ++i) {
-    //     cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
-    //     if ((i + 1) % 4 == 0) cout << endl;
-    // }
+    cout << endl << endl << setw(67) <<  "====: Species Mass Fractions :==== " << endl;
+    for (int i = 0; i < NS; ++i) {
+        cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
+        if ((i + 1) % 4 == 0) cout << endl;
+    }
 }
 
 inline bool CESolver::check_convergence(double* dlnj, double& dln) {

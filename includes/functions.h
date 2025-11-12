@@ -181,37 +181,30 @@ namespace helm {
         int J_SIZE = gas.J_SIZE;
         
         double sum;
-        double akj_N_sum;
-
         int offset;
-        vector<double> akj_N(NS);
 
         for (int k = 0; k < NE; ++k) {
 
             offset = k * J_SIZE;
 
-            akj_N_sum = 0.0;
-            for (int j = 0; j < NS; ++j) {
-                akj_N[j] = gas.a[k * NS + j] * gas.N[j];
-                akj_N_sum += akj_N[j];
+            sum = 0.0;
+            for (int j = 0; j < NS; ++j) {                
+                sum += gas.a[k * NS + j] * gas.N[j];
             }
 
             for (int i = 0; i < NE; ++i) {
                 
-                sum = 0.0;
+                J[offset + i] = 0.0;
                 for (int j = 0; j < NS; ++j)
-                    sum += akj_N[j] * gas.a[i * NS + j];
+                    J[offset + i] += gas.N[j] * gas.a[i * NS + j] * gas.a[k * NS + j];
             
-                J[offset + i] = sum;
             }
             
 
-            sum = 0.0;
+            F[k] = gas.b[k] - sum;
             for (int j = 0; j < NS; ++j) {
-                sum += akj_N[j] * gas.mu_RT[j];
+                F[k] += gas.N[j] * gas.a[k * NS + j] * gas.mu_RT[j];
             }
-
-            F[k] = gas.b[k] - akj_N_sum + sum;
         }
     }
 
@@ -332,7 +325,12 @@ namespace helm {
         for (int j = 0; j < NS; ++j) 
             sum += Uj_Nj[j] * gas.mu_RT[j];
 
-        F[J_SIZE - 1] = (gas.uo - gas.up) / (gcon * gas.T) + sum;
+        double eref = 0.0;
+        for (int j = 0; j < NS; ++j) 
+            eref += gas.N[j] * gas.species[j].href;
+        
+
+        F[J_SIZE - 1] = (gas.uo - eref) / (gcon * gas.T) + sum - gas.up;
     }
 
 

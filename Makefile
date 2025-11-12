@@ -82,6 +82,6 @@ $(TEST_TARGET): $(COMMON_AIR_OBJ) $(SOLVER_OBJ) $(TEST_OBJ)
 
 # Clean up
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) 
 
 .PHONY: all clean
