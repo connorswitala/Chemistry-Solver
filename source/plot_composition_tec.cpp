@@ -12,7 +12,7 @@ int main() {
     GasType g = GasType::AIR5;                     // Set gas type
     ConstraintType constraint = ConstraintType::UV; // Set minimization procedure
 
-    mix gas = common_air::create_air_mix(g);        // Create gas mix
+    mix gas = common_air::create_mix(g);
     CESolver CE(gas, constraint);                   // Construct CESolver
 
     // Output Tecplot file

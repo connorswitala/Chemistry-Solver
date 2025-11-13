@@ -306,7 +306,7 @@ inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
             gas.N[j] *= exp(e * DlnNj[j]);
         }
 
-        converged = CFD_convergence(DlnNj.data());
+        // converged = CFD_convergence(DlnNj.data());
     }
 
         gas.N_tot = 0.0;
@@ -394,7 +394,7 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
         // Check convergence
         converged = check_convergence(DlnNj.data(), dlnn);
         if (fabs(DELTA[J_SIZE - 1]) > 1.0e-4) converged = false;
-        if (fabs(gas.up - (gas.uo) / (gcon * gas.T) >= 0.5e-4)) converged = false;
+        if (fabs((gas.up - gas.uo) / (gcon * gas.T) >= 0.5e-4)) converged = false;
     }
 
     // Get final molar concentrations
@@ -408,7 +408,11 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
         gas.X0[j] = gas.N[j];
     }
 
-    cout << "N_tot = " << gas.N_tot << endl;
+    gas.up = 0.0;
+    for (int j = 0; j < NS; ++j) {
+        gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].hf - gas.species[j].href);
+    }
+
 
     compute_mass_fractions();
 }
@@ -428,14 +432,14 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
     double sum, e, dlnT = 0.0;
     int iteration = 0;
 
-    sum = 0.0;
-    for (int j = 0; j < NS; ++j)
-        sum += max(1e-6, gas.X0[j]);
-
-    gas.N_tot = sum;
-
+    gas.N_tot = 0.0;
     for (int j = 0; j < NS; ++j) {
-        gas.N[j] = max(1e-6, gas.X0[j]) / sum;
+        if (gas.species[j].q > 0.1)
+            gas.N[j] = 1e-12;    
+        else
+            gas.N[j] = 0.1 / NS;
+
+        gas.N_tot += gas.N[j];
     }
 
     NASA_fits();
@@ -478,10 +482,11 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
 
     gas.up = 0.0;
     for (int j = 0; j < NS; ++j) {
-        gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href);
+        gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].hf);
     }
 
     compute_mass_fractions();
+    
 }
 
 inline void CESolver::compute_equilibrium_HP(double& H, double& P) {
@@ -541,6 +546,8 @@ inline void CESolver::NASA_fits() {
                    + 0.25 * coeff[5] * Ts[5]
                    + 0.2 * coeff[6] * Ts[6]
                    + coeff[7] * Ts[1];
+
+                   cout << gas.H0_RT[j] << endl;
                   
 
         // Standard state entropy                   
@@ -594,7 +601,7 @@ void CESolver::print_properties() {
     // cout << setw(30) << "Mixture Internal Energy: " << gas.e / 1000.0 << " [kJ/kg]" << endl;
     // cout << setw(30) << "Mixture Gas Constant: " << gas.R << " [J/kg-K]" << endl;
     // cout << setw(30) << "Mixture cp: " << gas.cp << " [J/kg-K]" << endl;
-    // cout << setw(30) << "Mixture cv: " << gas.cv << " [J/kg-K]" << endl;
+    cout << setw(30) << "Mixture cv: " << gas.up / gas.T << " [J/kg-K]" << endl;
     // cout << setw(30) << "Mixture gamma: " << gas.gamma << endl;
     // cout << setw(30) << "Mixture MW: " << gas.MW << " [g/mol]" << endl;
 
@@ -628,22 +635,6 @@ inline bool CESolver::check_convergence(double* dlnj, double& dln) {
 
     check = gas.N_tot * fabs(dln) / sum;
     if (check > tol) return false;
-
-    return true;
-}
-
-inline bool CESolver::CFD_convergence(double* dlnj) {
-
-    double sum = 0.0, check, tol = 0.5e-5;
-
-    for (int j = 0; j < NS; ++j)
-        sum += gas.N[j];
-
-
-    for (int j = 0; j < NS; ++j) {
-        check = gas.N[j] * fabs(dlnj[j]) / sum;
-        if (check > tol) return false;
-    }
 
     return true;
 }

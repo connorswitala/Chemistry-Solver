@@ -25,6 +25,7 @@ struct mix {
     // ======================: Displayed properties in this box :=======================
     //                                                                                  |
     vector<SpeciesInfo> species;            // Vector of Species                        |
+    vector<string> elements;                // Vector of element names                  |
     int NS, NE;                             // Sizes                                    |
     double R, gamma, cp, cv, MW, Pr, k, D;  // Thermodynamic properties of mixture.     |
     double e, rho, T, p, V;                 // Thermodynamic state variables            |
@@ -32,6 +33,7 @@ struct mix {
     //                                                                                  |
     // =================================================================================
 
+    Vector elemental_mw;
     Vector H0_RT, S0_R, mu0_RT, CP0_R, U0_RT;  // NASA polynomial
     double up, hp, sp, uo, ho, so;  // Used for specification of enthalpy, internal energy, and entropy.
     double N_tot;

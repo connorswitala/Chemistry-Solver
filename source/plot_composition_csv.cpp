@@ -10,9 +10,9 @@ using namespace std;
 
 int main() {
     GasType g = GasType::AIR5;                     // Set gas type
-    ConstraintType constraint = ConstraintType::TV; // Set minimization procedure
+    ConstraintType constraint = ConstraintType::TP; // Set minimization procedure
 
-    mix gas = common_air::create_air_mix(g);        // Create gas mix
+    mix gas = common_air::create_mix(g);
     CESolver CE(gas, constraint);                   // Construct CESolver
 
     // Output CSV file
@@ -24,7 +24,7 @@ int main() {
     }
 
     // Sweep settings
-    double V = 100000000000.0;        // Pa
+    double P = 101325.0;
     double T_min = 300.0;       // K
     double T_max = 20000.0;     // K
     int    N     = 2000;
@@ -41,7 +41,7 @@ int main() {
 
     for (int i = 0; i < N; ++i) {
         double T = T_min + (T_max - T_min) * static_cast<double>(i) / static_cast<double>(N - 1);
-        CE.compute_equilibrium(T, V);
+        CE.compute_equilibrium(T, P);
 
         // Write one row per temperature
         write << fixed << setprecision(8) << T;

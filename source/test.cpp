@@ -5,25 +5,31 @@
 using namespace std;
 
 int main() {
+    
+    /**
+     * Required inputs: species names, and initial mass fractions of each species.
+    */
+    // vector<string> species = {"N2", "O2", "NO", "N", "O", "N2+", "O2+", "N+", "O+", "NO+", "e-"};        
+    // vector<string> elements = {"N", "O"};
+    // vector<double> initial = {0.7572, 0.2428}; 
 
+    vector<string> species = {"CO2", "N2", "O2", "CO", "O", "C", "NO", "N"};        
+    vector<string> elements = {"C", "O", "N"};
+    vector<double> initial = {0.264, 0.7186, 0.0174}; 
 
-    GasType g = GasType::AIR11; // Set gas type
-    ConstraintType constraint = ConstraintType::TV; // Set minimization procedure
+     mix gas = create_mix::mixture(species, elements, initial);
 
-    mix gas = common_air::create_air_mix(g); // Create gas mix
+    // GasType g = GasType::AIR5;
+    // mix gas = common_air::create_mix(g);
+
+    ConstraintType constraint = ConstraintType::TP; // Set minimization procedure
     CESolver CE(gas, constraint);   // Construct CESolver class for minimization.
 
-    double T = 5000.0;
-    double V = 1.0;
+    double T = 500;
+    double P = 100000;
 
-    auto start = NOW;
-    CE.CFD_equilibrium(T, V);
-    // CE.compute_equilibrium(T, V);
-    auto end = NOW;
-    auto duration = chrono::duration<double>(end - start).count();
-
+    CE.compute_equilibrium(T,P); // Solve minimization 
     CE.print_properties();
-    cout << endl << "Total time: " << setprecision(8) << duration << endl;
 
     return 0;
 }

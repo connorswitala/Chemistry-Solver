@@ -4,6 +4,7 @@
 #include "../common_mixes/commonMixes.h"
 #include "../includes/functions.h"
 #include "../includes/math.h"
+#include "../includes/readNASA.h"
 
 
 class CESolver {
@@ -39,37 +40,25 @@ class CESolver {
     int XI_SIZE, XI_ROWS;
 
     inline void compute_equilibrium_TV(double& T, double& V);     // All in one Equilibirum solver function
-
     inline void compute_equilibrium_UV(double& U, double& V);     // All in one Equilibirum solver function
-
     inline void compute_equilibrium_SV(double& S, double& V);     // All in one Equilibirum solver function
-
     inline void compute_equilibrium_TP(double& T, double& P);     // All in one Equilibirum solver function
-
     inline void compute_equilibrium_HP(double& H, double& P);     // All in one Equilibirum solver function
-
     inline void compute_equilibrium_SP(double& S, double& P);     // All in one Equilibirum solver function
 
 
     inline void findTRange();                       // Finds Temperature range to use proper NASA coeff.
-
     inline array<double, 7> temp_base();    // Calculates Temperature functions for NASA poly.
-
     inline void NASA_fits();                               // Calculates H0, S0, and MU0.
 
     inline void compute_mass_fractions();                  // Converts molar fractions to mass fractions.
 
     inline bool check_convergence(double* dlnj, double& dln);
-
     inline double compute_damping(double* dlnj, double& dln, double& dlnT);
 
     inline void form_xi();
-
     inline void formJF();
-
     inline void XI_TEST();
-
-    inline bool CFD_convergence(double* dlnj);
 
 };
 

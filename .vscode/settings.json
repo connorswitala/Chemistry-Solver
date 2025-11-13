@@ -72,6 +72,9 @@
         "stdfloat": "cpp",
         "stop_token": "cpp",
         "thread": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "bitset": "cpp",
+        "regex": "cpp",
+        "cassert": "cpp"
     }
 }

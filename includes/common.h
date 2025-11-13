@@ -11,6 +11,7 @@
 #include<iomanip>
 #include<chrono>
 #include<fstream>
+#include <algorithm>
 
 constexpr double gcon = 8314.462;       // Universal gas constant: Joules / mol-Kelvin
 constexpr double bcon = 1.380649e-23;   // Boltzmann constant: Joules / Kelvin

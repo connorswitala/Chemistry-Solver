@@ -7,13 +7,13 @@ using namespace std;
 int main() {
 
 
-    GasType g = GasType::AIR5; // Set gas type
+    GasType g = GasType::AIR7; // Set gas type
     ConstraintType constraint = ConstraintType::TP; // Set minimization procedure
 
-    mix gas = common_air::create_air_mix(g); // Create gas mix
+    mix gas = common_air::create_mix(g);
     CESolver CE(gas, constraint);   // Construct CESolver class for minimization.
 
-    double T = 300;
+    double T = 6000;
     double P = 101325.0;
 
     auto start = NOW;
@@ -32,7 +32,6 @@ int main() {
     double U = 1e7;
     double V = 1 / 1.225;
 
-    gas = common_air::create_air_mix(g); // Create gas mix
     CESolver CE1(gas, constraint);   // Construct CESolver class for minimization.
 
     start = NOW;

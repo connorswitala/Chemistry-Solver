@@ -1,5 +1,42 @@
 #include "commonMixes.h"
 
+inline void print_species_table(const mix& gas) {
+    using std::cout;
+    using std::left;
+    using std::right;
+    using std::setw;
+    using std::fixed;
+    using std::setprecision;
+
+    const int W_NAME   = 12;
+    const int W_INT    = 8;
+    const int W_DOUBLE = 20;
+
+    // Header
+    cout << left  << setw(W_NAME)   << "Species"
+         << right << setw(W_INT)    << "Charge"
+         << right << setw(W_DOUBLE) << "MW [g/mol]"
+         << right << setw(W_DOUBLE) << "href [J/kmol]"
+         << right << setw(W_DOUBLE) << "hf [J/mol]\n";
+
+    // Separator
+    cout << std::string(W_NAME + W_INT + 3*W_DOUBLE, '-') << "\n";
+
+    // Rows
+    cout << fixed << setprecision(6);
+    for (int j = 0; j < gas.NS; ++j) {
+        const auto& sp = gas.species[j];
+
+        cout << left  << setw(W_NAME)   << sp.name
+             << right << setw(W_INT)    << sp.q
+             << right << setw(W_DOUBLE) << sp.mw
+             << right << setw(W_DOUBLE) << sp.href
+             << right << setw(W_DOUBLE) << sp.hf
+             << "\n";
+    }
+}
+
+
 namespace common_air {
 
     SpeciesInfo N2 {
@@ -232,7 +269,144 @@ namespace common_air {
         0.0
     };
 
-    mix create_air_mix(GasType gastype) {
+    mix make_air5() {
+        mix air;
+        air.name = "AIR5";
+
+        air.NS = 5;
+        vector<string> speciesNames = {"N2", "O2", "NO", "N", "O"};
+        air.species = vector<SpeciesInfo>(air.NS);
+
+        // Read in species info (mw, charge, href, etc.)
+        for (int j = 0; j < air.NS; ++j) 
+            air.species[j] = read_species_info(speciesNames[j]);
+
+        // Find elements used in species and build 'a' matrix.
+        build_elements_and_a(air);
+        air.elemental_mw = vector<double>(air.NE);
+
+        for (int i = 0; i < air.NE; ++i)  {
+            for (int j = 0; j < air.NS; ++j) {
+                if (air.elements[i] == air.species[j].name) 
+                    air.elemental_mw[i] = air.species[j].mw;
+            }
+        }
+
+
+        for (int i = 0; i < air.NE; ++i) {
+            for (int j = 0; j < air.NS; ++j) {
+                air.a[i * air.NS + j] *= air.elemental_mw[i];
+            }
+        }
+        
+        air.HAS_IONS = false;
+        for (int j = 0; j < air.NS; ++j) {
+            air.species[j].href *= 1000.0;
+            air.species[j].hf *= 1000.0;
+        }        
+
+        air.H0_RT = vector<double>(air.NS);
+        air.U0_RT = vector<double>(air.NS);
+        air.S0_R = vector<double>(air.NS);
+        air.mu0_RT = vector<double>(air.NS);
+        air.CP0_R = vector<double>(air.NS);
+        air.mu_RT = vector<double>(air.NS);        
+        air.N = vector<double>(air.NS);
+
+        air.Y = vector<double>(air.NS);
+        air.X = vector<double>(air.NS);
+        
+        air.T = 3000.0;
+        air.gamma = 1.4;
+        air.R = 287.0;
+        air.cv = air.R/(air.gamma - 1.0);
+        air.cp = air.gamma * air.cv;
+
+        air.X0 = { 0.0, 0.0, 0.0, 0.7572, 0.2428}; 
+
+        air.b = vector<double>(air.NE, 0.0);         
+        air.b[0] = 0.7572;
+        air.b[1] = 0.2428;
+
+        cout << endl << "-- " << air.NS << " species air mix created. Contains: ";
+        for (int i = 0; i < air.NS; ++i) cout << air.species[i].name << ", ";
+        cout << endl;
+
+        print_species_table(air);
+        return air;
+    }
+
+    mix make_air7() {
+        mix air;
+        air.name = "AIR7";
+
+        air.NS = 7;
+        vector<string> speciesNames = {"N2", "O2", "NO", "N", "O", "NO+", "e-"};
+        air.species = vector<SpeciesInfo>(air.NS);
+
+        // Read in species info (mw, charge, href, etc.)
+        for (int j = 0; j < air.NS; ++j) 
+            air.species[j] = read_species_info(speciesNames[j]);
+
+        for (int j = 0; j < air.NS; ++j)
+            air.species[j].name = speciesNames[j];
+
+        // Find elements used in species and build 'a' matrix.
+        build_elements_and_a(air);
+
+        air.elemental_mw = vector<double>(air.NE);
+
+        for (int i = 0; i < air.NE; ++i)  {
+            for (int j = 0; j < air.NS; ++j) {
+                if (air.elements[i] == air.species[j].name) 
+                    air.elemental_mw[i] = air.species[j].mw;
+            }
+        }
+        
+        for (int i = 0; i < air.NE; ++i) {
+            for (int j = 0; j < air.NS; ++j) {
+                air.a[i * air.NS + j] *= air.elemental_mw[i];
+            }
+        }
+        
+        air.HAS_IONS = false;
+        for (int j = 0; j < air.NS; ++j) {
+            if (air.species[j].name == "e-")
+                air.HAS_IONS = true;
+
+            air.species[j].href *= 1000.0;
+        }        
+
+        air.H0_RT = vector<double>(air.NS);
+        air.U0_RT = vector<double>(air.NS);
+        air.S0_R = vector<double>(air.NS);
+        air.mu0_RT = vector<double>(air.NS);
+        air.CP0_R = vector<double>(air.NS);
+        air.mu_RT = vector<double>(air.NS);        
+        air.N = vector<double>(air.NS);
+
+        air.Y = vector<double>(air.NS);
+        air.X = vector<double>(air.NS);
+        
+        air.T = 3800.0;
+        air.gamma = 1.4;
+        air.R = 287.0;
+        air.cv = air.R/(air.gamma - 1.0);
+        air.cp = air.gamma * air.cv;
+
+        air.X0 = { 0.0, 0.0, 0.0, 0.7572, 0.2428, 0.0, 0.0}; 
+        air.b = vector<double>(air.NE, 0.0);   
+        air.b[0] = 0.7572;
+        air.b[1] = 0.2428;
+
+        cout << endl << "-- " << air.NS << " species air mix created. Contains: ";
+        for (int i = 0; i < air.NS; ++i) cout << air.species[i].name << ", ";
+        cout << endl;
+        return air;
+    }
+
+    
+    mix create_mix(GasType gastype) {
         mix gas;
         switch (gastype) {
             case::GasType::AIR5:
@@ -259,101 +433,7 @@ namespace common_air {
                 gas = common_air::make_air13();
                 return gas;
                 break;
-
-            case::GasType::CREATE:
-                // Will need to be made.
-                break;
         }
-    }
-
-    mix make_air5() {
-        mix air;
-        air.name = "AIR5";
-        air.species = {N2, O2, NO, N, O};
-
-        air.NS = 5;
-        air.NE = 2;
-
-        air.HAS_IONS = false;
-
-        air.H0_RT = vector<double>(air.NS);
-        air.U0_RT = vector<double>(air.NS);
-        air.S0_R = vector<double>(air.NS);
-        air.mu0_RT = vector<double>(air.NS);
-        air.CP0_R = vector<double>(air.NS);
-        air.mu_RT = vector<double>(air.NS);        
-        air.N = vector<double>(air.NS);
-
-        air.Y = vector<double>(air.NS);
-        air.X = vector<double>(air.NS);
-        
-        air.T = 3000.0;
-
-        air.gamma = 1.4;
-        air.R = 287.0;
-        air.cv = air.R/(air.gamma - 1.0);
-        air.cp = air.gamma * air.cv;
-
-        air.X0 = { 0.0, 0.0, 0.0, 0.7572, 0.2428};
-
-        air.a = {28.0134, 0.0, 14.0067, 14.0067, 0.0,   // N
-                 0.0, 31.9987, 15.9994, 0.0,  15.9994};  // O
- 
-
-        air.b = vector<double>(air.NE, 0.0);         
-        air.b[0] = 0.7572;
-        air.b[1] = 0.2428;
-
-        cout << endl << "-- " << air.NS << " species air mix created. Contains: ";
-        for (int i = 0; i < air.NS; ++i) cout << air.species[i].name << ", ";
-        cout << endl;
-        return air;
-    }
-
-    mix make_air7() {
-        mix air;
-        air.name = "AIR7";
-        air.species = {N2, O2, NO, N, O, NO_ion, e_ion};
-
-        air.NS = 7;
-        air.NE = 2;
-
-        air.HAS_IONS = true;
-
-        air.H0_RT = vector<double>(air.NS);
-        air.U0_RT = vector<double>(air.NS);
-        air.S0_R = vector<double>(air.NS);
-        air.mu0_RT = vector<double>(air.NS);
-        air.CP0_R = vector<double>(air.NS);
-        air.mu_RT = vector<double>(air.NS);        
-        air.N = vector<double>(air.NS);
-
-        air.Y = vector<double>(air.NS);
-        air.X = vector<double>(air.NS);
-        
-        air.T = 3000.0;
-
-        air.gamma = 1.4;
-        air.R = 287.0;
-        air.cv = air.R/(air.gamma - 1.0);
-        air.cp = air.gamma * air.cv;
-
-        air.X0 = { 0.7808, 0.2192, 0.0, 0.0, 0.0, 0.0, 0.0};
-
-        air.a = {2, 0, 1, 1, 0, 1, 0,   // N
-                 0, 2, 1, 0, 1, 1, 0};  // O
-
-        air.b = vector<double>(air.NE, 0.0);         
-        for (int i = 0; i < air.NE; ++i) {
-            for (int j = 0; j < air.NS; ++j) {
-                air.b[i] += air.a[i * air.NS + j] * air.X0[j];
-            }
-        }
-
-        cout << endl << "-- " << air.NS << " species air mix created. Contains: ";
-        for (int i = 0; i < air.NS; ++i) cout << air.species[i].name << ", ";
-        cout << endl;
-        return air;
     }
 
     mix make_air11_Ar() {
@@ -498,4 +578,92 @@ namespace common_air {
         cout << endl;
         return air;
     }
-}
+};
+
+
+namespace create_mix {
+
+    mix mixture(vector<string>& speciesNames, vector<string>& elementNames, vector<double>& initial_Y) {
+        mix gas;
+
+        gas.name = "Personal Mix";
+
+        gas.NS = speciesNames.size();
+        gas.species = vector<SpeciesInfo>(gas.NS);
+
+        // Read in species info (mw, charge, href, etc.)
+        for (int j = 0; j < gas.NS; ++j) 
+            gas.species[j] = read_species_info(speciesNames[j]);
+
+        for (int j = 0; j < gas.NS; ++j)
+            gas.species[j].name = speciesNames[j];
+
+        // Find elements used in species and build 'a' matrix.
+        build_elements_and_a(gas);
+        gas.elemental_mw = vector<double>(gas.NE);
+
+        for (int i = 0; i < gas.NE; ++i)  {
+            for (int j = 0; j < gas.NS; ++j) {
+                if (gas.elements[i] == gas.species[j].name) 
+                    gas.elemental_mw[i] = gas.species[j].mw;
+            }
+        }
+
+
+        for (int i = 0; i < gas.NE; ++i) {
+            cout << gas.elements[i] << "\t";
+            for (int j = 0; j < gas.NS; ++j) {
+                cout << gas.a[i * gas.NS + j] << "\t";
+            }
+            cout << endl;
+        }
+
+        
+        for (int i = 0; i < gas.NE; ++i) {
+            for (int j = 0; j < gas.NS; ++j) {
+                gas.a[i * gas.NS + j] *= gas.elemental_mw[i];
+            }
+        }
+
+        gas.b = vector<double>(gas.NE, 0.0);   
+        for (int i = 0; i < gas.NE; ++i) {
+            if (gas.elements[i] == elementNames[i])
+                gas.b[i] = initial_Y[i];            
+        }
+        
+        gas.HAS_IONS = false;
+        for (int j = 0; j < gas.NS; ++j) {
+            if (gas.species[j].name == "e-")
+                gas.HAS_IONS = true;
+
+            gas.species[j].href *= 1000.0;
+            gas.species[j].hf *= 1000.0;
+        }        
+
+        gas.H0_RT = vector<double>(gas.NS);
+        gas.U0_RT = vector<double>(gas.NS);
+        gas.S0_R = vector<double>(gas.NS);
+        gas.mu0_RT = vector<double>(gas.NS);
+        gas.CP0_R = vector<double>(gas.NS);
+        gas.mu_RT = vector<double>(gas.NS);        
+        gas.N = vector<double>(gas.NS);
+
+        gas.Y = vector<double>(gas.NS);
+        gas.X = vector<double>(gas.NS);
+        gas.X0 = vector<double>(gas.NS);
+        
+        gas.T = 600.0;         
+
+        cout << endl << "-- " << gas.NS << " species gas mix created. Contains: ";
+        for (int i = 0; i < gas.NS; ++i) cout << gas.species[i].name << ", ";
+        cout << endl;
+
+        print_species_table(gas);
+
+
+        cout << endl;
+        return gas;
+        
+    }
+};
+

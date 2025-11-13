@@ -1,7 +1,7 @@
 # ===== Makefile =====
 # Compiler and flags
 CXX := g++
-CXXFLAGS := -std=c++17 -O3 -I./includes -I./solverLib -I./common_mixes
+CXXFLAGS := -std=c++17 -O3 -I./includes -I./solverLib -I./common_mixes -I/readNASA.h
 
 # Directories
 COMMON_AIR_DIR 	:= common_mixes

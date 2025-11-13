@@ -1,15 +1,15 @@
 # Fdb version 4
-["cusdep nlo nls EnergyMinimization"] 1762580787.7976 "EnergyMinimization.nlo" "EnergyMinimization.nls" "EnergyMinimization" 1762644396.90084 0
-  "EnergyMinimization.nlo" 1762644396.57009 3382 51a4ecbd75c6f64665f34adc02cbdb9b "pdflatex"
+["cusdep nlo nls EnergyMinimization"] 1762991497.15476 "EnergyMinimization.nlo" "EnergyMinimization.nls" "EnergyMinimization" 1762991499.87683 0
+  "EnergyMinimization.nlo" 1762991499.5552 3382 b363dbdb46c91642ae8e658d3b44c289 "pdflatex"
   (generated)
   "EnergyMinimization.nls"
   (rewritten before read)
-["pdflatex"] 1762644394.78779 "c:/Users/frodo/programs/Chemistry-Solver/documents/EnergyMinimization.tex" "EnergyMinimization.pdf" "EnergyMinimization" 1762644396.90184 0
-  "EnergyMinimization.aux" 1762644396.55608 8270 f66568616b96f0ffee62c37e0a4a2e07 "pdflatex"
-  "EnergyMinimization.nls" 1762580788.28625 2862 9c70c186e4fcbc7682d2bbc188fbb755 "cusdep nlo nls EnergyMinimization"
-  "EnergyMinimization.out" 1762644396.56809 6251 39c57ad77020ebe0a894ba7d9d118928 "pdflatex"
-  "EnergyMinimization.toc" 1762644396.57009 3625 cf54b3923ff1cca5a76f3cdc4732f612 "pdflatex"
-  "c:/Users/frodo/programs/Chemistry-Solver/documents/EnergyMinimization.tex" 1762644393.73449 46846 76c3bcb4677647f9e4e982b8870dfa74 ""
+["pdflatex"] 1762991497.7725 "c:/Users/frodo/programs/Chemistry-Solver/documents/EnergyMinimization.tex" "EnergyMinimization.pdf" "EnergyMinimization" 1762991499.87779 0
+  "EnergyMinimization.aux" 1762991499.54219 8425 a1042f07cdeedcc1abb59a9a7efa9b33 "pdflatex"
+  "EnergyMinimization.nls" 1762991497.72411 2862 46ebc044cceccffa4fc8b2a377606250 "cusdep nlo nls EnergyMinimization"
+  "EnergyMinimization.out" 1762991499.5542 6588 1a2e3d39f557f9bde8aadd1343db83de "pdflatex"
+  "EnergyMinimization.toc" 1762991499.5552 3737 8f7f765d60e5f16e1972647f440d385d "pdflatex"
+  "c:/Users/frodo/programs/Chemistry-Solver/documents/EnergyMinimization.tex" 1762991488.70146 47315 06919f513c405dce392678c40bfbd90f ""
   "c:/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1762307540.38749 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "c:/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1762309140.55469 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "c:/texlive/2025/texmf-dist/fonts/tfm/jknappen/ec/tcrm1000.tfm" 1762308513.99736 1536 e07581a4bb3136ece9eeb4c3ffab8233 ""

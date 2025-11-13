@@ -1,37 +1,41 @@
+C	1	0	0	1	0	1	0	0	
+O	2	0	2	1	1	0	1	0	
+N	0	2	0	0	0	0	1	1	
 
--- 5 species air mix created. Contains: N2, O2, NO, N, O, 
+-- 8 species gas mix created. Contains: CO2, N2, O2, CO, O, C, NO, N, 
+Species       Charge          MW [g/mol]       href [J/kmol]         hf [J/mol]
+--------------------------------------------------------------------------------
+CO2                0           44.009500      9365469.000000   -393510000.000000
+N2                 0           28.013400      8670104.000000            0.000000
+O2                 0           31.998800      8680104.000000            0.000000
+CO                 0           28.010100      8671104.000000   -110535196.000000
+O                  0           15.999400      6725403.000000    249175003.000000
+C                  0           12.010700      6535895.000000    716680000.000000
+NO                 0           30.006100      9179110.000000     91271310.000000
+N                  0           14.006700      6197428.000000    472680000.000000
+
 -- Configuration complete. Using Gibbs minimization with temperature and pressure held constant and no charge constraint
 
+-92.658021
+1.420647
+1.463884
+-25.163103
+60.982247
+173.403356
+23.411967
+114.709276
 
-         Mixture Temperature: 300 [K]
-            Mixture Pressure: 101.325 [kPa]
-              Mixture Volume: 0 [kPa]
-     Mixture Internal Energy: 215.708 [kJ/kg]
-
-                               ====: Species Molar Fractions :==== 
-        N2: 0.7808	        O2: 0.2192	        NO: 0.0000	         N: 0.0000	
-         O: 0.0000	
-
-                                ====: Species Mass Fractions :==== 
-        N2: 0.7572	        O2: 0.2428	        NO: 0.0000	         N: 0.0000	
-         O: 0.0000	
-Old time: 0.00015430
-
--- 5 species air mix created. Contains: N2, O2, NO, N, O, 
--- Configuration complete. Using Helmholtz minimization with internal energy and volume held constant and no charge constraint
-
-N_tot = 0.04205262
-
-         Mixture Temperature: 6119.16267266 [K]
-            Mixture Pressure: 0.00000000 [kPa]
-              Mixture Volume: 0.81632653 [kPa]
-     Mixture Internal Energy: 0.00018995 [kJ/kg]
+         Mixture Temperature: 500.000000 [K]
+            Mixture Pressure: 100.000000 [kPa]
+              Mixture Volume: 0.000000 [kPa]
+     Mixture Internal Energy: -17205.747542 [kJ/kg]
+                  Mixture cv: -34411.495085 [J/kg-K]
 
                                ====: Species Molar Fractions :==== 
-        N2: 0.6014	        O2: 0.0053	        NO: 0.0396	         N: 0.0430	
-         O: 0.3106	
+       CO2: 0.9524	        N2: 0.0269	        O2: 0.0207	        CO: 0.0000	
+         O: 0.0000	         C: 0.0000	        NO: 0.0000	         N: 0.0000	
+
 
                                 ====: Species Mass Fractions :==== 
-        N2: 0.7085	        O2: 0.0072	        NO: 0.0500	         N: 0.0254	
-         O: 0.2089	
-Old time: 0.00002650
+       CO2: 0.9673	        N2: 0.0174	        O2: 0.0153	        CO: 0.0000	
+         O: 0.0000	         C: 0.0000	        NO: 0.0000	         N: 0.0000	
