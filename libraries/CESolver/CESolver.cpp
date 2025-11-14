@@ -242,8 +242,8 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
     //     gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href);
     // }
 
-    compute_mixture_properties();
-    compute_derivatives();
+    // compute_mixture_properties();
+    // compute_derivatives();
 
     // gas.p = gas.rho * gas.R  * gas.T;
 
