@@ -9,8 +9,8 @@ int main() {
     std::mt19937 gen(rd());                     // Mersenne Twister RNG
     std::uniform_int_distribution<> distP(20000.0, 100000.0);
     std::uniform_int_distribution<> distT(300.0, 20000.0);
-    std::uniform_int_distribution<> distV(1.0, 100.0);
-    std::uniform_int_distribution<> distU(5e5, 5e7);
+    std::uniform_int_distribution<> distV(100.0, 10000.0);
+    std::uniform_int_distribution<> distU(5e5, 1e7);
 
 
     GasType g = GasType::AIR11;
@@ -20,7 +20,7 @@ int main() {
     CESolver CE(gas, constraint);   // Construct CESolver class for minimization.
 
     double T, T_base = 300.0;
-    double U, U_base = 5e5;
+    double U = 8e5, U_base = 5e5;
     double P = 101325.0, V = 1.0 / 1.225;
 
     int N = 500000;
@@ -28,7 +28,7 @@ int main() {
     for (int i = 0; i < N; ++i) {
         U = distU(gen);
         V = distV(gen);
-        CE.compute_equilibrium(U, V); // Solve minimization 
+        CE.compute_equilibrium_UV(U, V); // Solve minimization 
     }
     
     auto end = NOW;
@@ -36,7 +36,7 @@ int main() {
 
     // CE.print_properties();
 
-    cout << endl << "Total time: " << setprecision(8) << duration << "-- Time per call = " << fixed << setprecision(8) << duration / N << " s." << endl << endl;
+    cout << endl << "-- Total time: " << setprecision(8) << duration << endl << "-- Time per call = " << fixed << setprecision(8) << duration / N << " s." << endl << endl;
 
     return 0;
 }

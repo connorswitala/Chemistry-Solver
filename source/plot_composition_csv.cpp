@@ -3,8 +3,8 @@
 using namespace std;
 
 int main() {
-    GasType g = GasType::AIR5;                     // Set gas type
-    ConstraintType constraint = ConstraintType::TP; // Set minimization procedure
+    GasType g = GasType::AIR11;                     // Set gas type
+    ConstraintType constraint = ConstraintType::UV; // Set minimization procedure
 
     mix gas = common::air_mixture(g);
     CESolver CE(gas, constraint);                   // Construct CESolver
@@ -18,10 +18,9 @@ int main() {
     }
 
     // Sweep settings
-    double P = 101325.0;
-    double T_min = 300.0;       // K
-    double T_max = 20000.0;     // K
-    int    N     = 2000;
+    double U_min = 3e5;       // K
+    double V = 1.0 / 1.225;
+    int i = 0;
 
     // Write CSV header
     write << "T [K]";
@@ -33,16 +32,17 @@ int main() {
     // Compute equilibrium across the sweep
     auto start = chrono::high_resolution_clock::now();
 
-    for (int i = 0; i < N; ++i) {
-        double T = T_min + (T_max - T_min) * static_cast<double>(i) / static_cast<double>(N - 1);
-        CE.compute_equilibrium(T, P);
+    while (gas.T < 19500.0) {
+        double  U = U_min + 5000.0 * i;
+        CE.compute_equilibrium(U, V);
 
         // Write one row per temperature
-        write << fixed << setprecision(8) << T;
+        write << fixed << setprecision(8) << gas.T;
         for (int j = 0; j < gas.NS; ++j) {
             write << "," << gas.Y[j];
         }
         write << "\n";
+        i++;
     }
 
     auto end = chrono::high_resolution_clock::now();
@@ -51,7 +51,7 @@ int main() {
     write.close();
 
     cout << "\nTotal time: " << fixed << setprecision(8) << duration
-         << " s  -- Time per call = " << duration / N << " s.\n"
+         << " s  -- Time per call = " << duration / i << " s.\n"
          << "-- CSV file saved to " << filename << "\n";
 
     return 0;

@@ -72,26 +72,31 @@ namespace common {
         switch (gastype) {
             case::GasType::AIR5:
                 gas = common::make_air5();
+                gas.name = "AIR5";
                 return gas;
                 break;
 
             case::GasType::AIR7:
                 gas = common::make_air7();
+                gas.name = "AIR7";
                 return gas;
                 break;    
 
             case::GasType::AIR11:
                 gas = common::make_air11();
+                gas.name = "AIR11";
                 return gas;
                 break;
 
             case::GasType::AIR11_AR:
                 gas = common::make_air11_Ar();
+                gas.name = "AIR11_AR";
                 return gas;
                 break;
 
             case::GasType::AIR13:
                 gas = common::make_air13();
+                gas.name = "AIR13";
                 return gas;
                 break;
         }
@@ -156,7 +161,7 @@ namespace common {
 mix create_mixture(vector<string>& speciesNames, vector<string>& elementNames, vector<double>& initial_Y) {
     mix gas;
 
-    gas.name = "Personal Mix";
+    gas.name = "personal_mix";
 
     gas.NS = speciesNames.size();
     gas.species = vector<SpeciesInfo>(gas.NS);

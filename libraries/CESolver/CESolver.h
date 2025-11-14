@@ -22,6 +22,8 @@ class CESolver {
     // Main equilibrium function
     void compute_equilibrium(double& a, double& b);
 
+    inline void compute_equilibrium_UV(double& U, double& V);     // All in one Equilibirum solver function
+
     // Main CFD function
     void CFD_equilibrium(double T, double V);
     
@@ -38,7 +40,6 @@ class CESolver {
     Vector J, F, DELTA;   // Newton method vectors
 
     inline void compute_equilibrium_TV(double& T, double& V);     // All in one Equilibirum solver function
-    inline void compute_equilibrium_UV(double& U, double& V);     // All in one Equilibirum solver function
     inline void compute_equilibrium_SV(double& S, double& V);     // All in one Equilibirum solver function
     inline void compute_equilibrium_TP(double& T, double& P);     // All in one Equilibirum solver function
     inline void compute_equilibrium_HP(double& H, double& P);     // All in one Equilibirum solver function
@@ -53,7 +54,7 @@ class CESolver {
 
     // Convergence functions
     inline bool check_convergence(double* dlnj, double& dln);
-    inline double compute_damping(double* dlnj, double& dln, double& dlnT);
+    inline double compute_damping(vector<double>& DlnNj, double& dln, double& dlnT);
 };
 
 #endif

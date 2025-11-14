@@ -81,7 +81,7 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
     string ions;
     if (gas.HAS_IONS) ions = " and charge constraint enforced";
     else ions = " and no charge constraint";
-    cout << "-- Configuration complete. Using " << energy << " minimization with " << contraint << " held constant" << ions << endl << endl;
+    cout << "-- Chemical equilibrium configuration complete. Using " << energy << " minimization with " << contraint << " held constant" << ions << endl << endl;
 }
 
 void CESolver::CFD_equilibrium(double T, double V) {
@@ -105,12 +105,10 @@ inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
     double dlnt = 0.0;
     double dlnn = 0.0;
 
-    sum = 0.0;
-    for (int j = 0; j < NS; ++j)
-        sum += max(1e-6, gas.X0[j]);
-
+    gas.N_tot = 0.0;
     for (int j = 0; j < NS; ++j) {
-        gas.N[j] = max(1e-6, gas.X0[j]) / sum;
+        gas.N[j] = gas.X0[j];
+        gas.N_tot += gas.N[j];
     }
 
     NASA_fits();
@@ -133,7 +131,7 @@ inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
             if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE];
         }
 
-        e = compute_damping(DlnNj.data(), dlnn, dlnt);
+        e = compute_damping(DlnNj, dlnn, dlnt);
 
         for (int j = 0; j < NS; ++j) {
             gas.N[j] *= exp(e * DlnNj[j]);
@@ -168,24 +166,26 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
     double e, rlntot;
 
     int iteration = 0;
-    
+    int maxiter = 200;
+    vector<double> DlnNj(NS);
+
+    // Initial conditions
     gas.N_tot = 0.0;
     for (int j = 0; j < NS; ++j) {
         gas.N[j] = gas.X0[j];
         gas.N_tot += gas.N[j];
     }
 
-
-    vector<double> DlnNj(NS);
-
-    while (!converged) {
+    while (iteration < maxiter) {
 
         NASA_fits();
 
         // Compute u'
         gas.up = 0.0;
+        // gas.e_ref = 0.0;
         for (int j = 0; j < NS; ++j) {
             gas.up += gas.N[j] * gas.U0_RT[j];
+            // gas.e_ref += gas.N[j] * gas.species[j].href;
         }
 
         // Form matrix system
@@ -210,8 +210,7 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
         }
 
         rlntot /= gas.N_tot;
-
-        e = compute_damping(DlnNj.data(), rlntot, DELTA[J_SIZE - 1]);
+        e = compute_damping(DlnNj, rlntot, DELTA[J_SIZE - 1]);
 
         gas.N_tot = 0.0;
         for (int j = 0; j < NS; ++j) {
@@ -227,12 +226,12 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
         // Check convergence
         converged = check_convergence(DlnNj.data(), dlnn);
         if (fabs(DELTA[J_SIZE - 1]) > 1.0e-4) converged = false;
-        // if (fabs((gas.up - gas.uo) / (gcon * gas.T) >= 0.5e-4)) converged = false;
+        // double ucon = gas.up * gcon * gas.T + gas.e_ref - gas.uo;
+        // if (fabs(ucon) >= 0.5e-4) converged = false;
+        if (converged) iteration = maxiter;        
     }
 
     // Get final molar concentrations
-
-
     for (int j = 0; j < NS; ++j) {
         gas.X[j] = gas.N[j] / gas.N_tot;
         gas.X0[j] = gas.N[j];
@@ -243,7 +242,7 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
     //     gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href);
     // }
 
-    // compute_mixture_properties();
+    compute_mixture_properties();
 
     // gas.p = gas.rho * gas.R  * gas.T;
 
@@ -266,11 +265,7 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
 
     gas.N_tot = 0.0;
     for (int j = 0; j < NS; ++j) {
-        if (gas.species[j].q > 0.1)
-            gas.N[j] = 1e-12;    
-        else
-            gas.N[j] = 0.1 / NS;
-
+        gas.N[j] = gas.X0[j];
         gas.N_tot += gas.N[j];
     }
 
@@ -293,9 +288,9 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
             if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE + 1];
         }
 
-        e = compute_damping(DlnNj.data(), DELTA[NE], dlnT);
+        e = compute_damping(DlnNj, DELTA[NE], dlnT);
 
-        gas.N_tot *=  exp(e * DELTA[NE]);
+        gas.N_tot *= exp(e * DELTA[NE]);
 
         for (int j = 0; j < NS; ++j)
             gas.N[j] *= exp(e * DlnNj[j]);
@@ -303,25 +298,19 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
         converged = check_convergence(DlnNj.data(), DELTA[NE]);
     }
 
-    gas.N_tot = 0.0;
-    for (int j = 0; j < NS; ++j) {
-            gas.N_tot += gas.N[j];
-            cout << gas.N[j] << endl;
-    }
-
     for (int j = 0; j < NS; ++j) {
         gas.X[j] = gas.N[j] / gas.N_tot;
         gas.X0[j] = gas.N[j];
     }
 
-    gas.up = 0.0;
-    for (int j = 0; j < NS; ++j) {
-        gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href);
-    }
+    // gas.up = 0.0;
+    // for (int j = 0; j < NS; ++j) {
+    //     gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href);
+    // }
 
-    compute_mixture_properties();
-    gas.rho = gas.p / (gas.R * gas.T);
-    gas.V = 1.0 / gas.rho;
+    // compute_mixture_properties();
+    // gas.rho = gas.p / (gas.R * gas.T);
+    // gas.V = 1.0 / gas.rho;
     
 }
 
@@ -334,9 +323,9 @@ inline void CESolver::compute_equilibrium_SP(double& S, double& P) {
 }
 
 inline void CESolver::findTRange() {
-    if      (gas.T >= 200.0   && gas.T <= 1000.0)   T_flag = 0;
-    else if (gas.T >  1000.0  && gas.T <= 6000.0)   T_flag = 1;
-    else if (gas.T >  6000.0  && gas.T <= 20000.0)  T_flag = 2;
+    if      (gas.T >= 200.0   && gas.T < 1000.0)   T_flag = 0;
+    else if (gas.T >=  1000.0  && gas.T < 6000.0)   T_flag = 1;
+    else if (gas.T >=  6000.0  && gas.T <= 20000.0)  T_flag = 2;
     else {
         T_flag = -1;
         cout << "T = " << gas.T << ", outside polynomial range" << endl;
@@ -471,50 +460,22 @@ inline bool CESolver::check_convergence(double* dlnj, double& dln) {
     return true;
 }
 
-inline double CESolver::compute_damping(double* dlnj, double& dlnN, double& dlnT) {
-    // Constants from the text
-    constexpr double SIZE = 18.420681;          // ~ ln(1e8)
-    constexpr double C1   =  9.2103404;         // ~ ln(1e4)
+inline double CESolver::compute_damping(vector<double>& DlnNj, double& dlnN, double& dlnT) {
 
-    // ---- λ1 = 2 / max( 5|ΔlnT|, 5|ΔlnN|, max_j |Δln n_j| ) ----
-    double max_dlnj = 0.0;
-    for (int j = 0; j < NS; ++j) {               // gaseous species only
-        double a = fabs(dlnj[j]);
-        if (a > max_dlnj) max_dlnj = a;
+
+    double lam1 = 5.0 * max(max( fabs(*max_element(DlnNj.begin(), DlnNj.end())), fabs(dlnN)), dlnT);
+    double lam2 = 1.0;
+    double ratio;
+
+    for (int j = 0 ; j < NS; ++j) {
+        ratio = log(gas.N[j] / gas.N_tot);
+        if (ratio > -18.420681) 
+            lam1 = max(lam1, fabs(DlnNj[j]));
+        if (ratio < -18.420681 && DlnNj[j] > 0.0) 
+            lam2 = min( lam2, fabs((-DlnNj[j] - 9.2103404)/(fabs(DlnNj[j] - dlnN) + 1.0e-16)) );
     }
-    double denom1 = max( 5.0 * abs(dlnT), max(5.0 * abs(dlnN), max_dlnj));
-    double lambda1 = (denom1 > 0.0) ? std::min(1.0, 2.0 / denom1) : 1.0;
-
-    // ---- λ2 from (3.2) for species with ln(nj/n) <= -SIZE and Δln nj >= 0 ----
-    double lambda2 = 1.0;     // no constraint unless triggered
-    bool triggered = false;
-
-
-    for (int j = 0; j < NS; ++j) {
-
-        const double ratio = log(gas.N[j] / gas.N_tot);  // ln(nj/n)
-
-        if (ratio <= -SIZE && dlnj[j] >= 0.0) {
-
-            double denom2 = dlnj[j] - dlnN;
-
-            if (abs(denom2) > 0.0) {
-
-                double frac = abs((-ratio - C1) / denom2);
-                lambda2 = min(lambda2, frac);
-                triggered = true;
-
-            }
-        }
-    }
-
-    if (!triggered) lambda2 = 1.0;
-
-    // ---- Final damping factor λ = min(1, λ1, λ2) ----
-    double lambda = min(1.0, min(lambda1, lambda2));
-    if (lambda < 0.0) lambda = 0.0;  // safety clamp
-
-    return lambda;
+    lam1 = 2.0 / (lam1 + 1.0e-16);
+    return min(1.0, min(lam1, lam2));
 }
 
 
