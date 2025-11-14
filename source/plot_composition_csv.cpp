@@ -1,10 +1,4 @@
-#include "../CESolver/CESolver.h"
-#include <chrono>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <string>
-#include <vector>
+#include "../libraries/CESolver/CESolver.h"
 
 using namespace std;
 
@@ -12,11 +6,11 @@ int main() {
     GasType g = GasType::AIR5;                     // Set gas type
     ConstraintType constraint = ConstraintType::TP; // Set minimization procedure
 
-    mix gas = common_air::create_mix(g);
+    mix gas = common::air_mixture(g);
     CESolver CE(gas, constraint);                   // Construct CESolver
 
     // Output CSV file
-    string filename = "../files/equilibrium_" + gas.name + ".csv";
+    string filename = "../misc/files/equilibrium_" + gas.name + ".csv";
     ofstream write(filename);
     if (!write) {
         cerr << "Failed to open " << filename << " for writing.\n";

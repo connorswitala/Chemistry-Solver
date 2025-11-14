@@ -1,6 +1,4 @@
-#include "../CESolver/CESolver.h"
-#include<chrono>
-#include<random> 
+#include "../libraries/CESolver/CESolver.h"
 
 using namespace std;
 
@@ -11,46 +9,34 @@ int main() {
     std::mt19937 gen(rd());                     // Mersenne Twister RNG
     std::uniform_int_distribution<> distP(20000.0, 100000.0);
     std::uniform_int_distribution<> distT(300.0, 20000.0);
-    std::uniform_int_distribution<> distV(1.0, 2.0);
+    std::uniform_int_distribution<> distV(1.0, 100.0);
+    std::uniform_int_distribution<> distU(5e5, 5e7);
 
 
-    GasType g = GasType::AIR11; // Set gas type
-    ConstraintType constraint = ConstraintType::TV; // Set minimization procedure
+    GasType g = GasType::AIR11;
+    mix gas = common::air_mixture(g);
+    ConstraintType constraint = ConstraintType::UV; // Set minimization procedure
 
-    mix gas = common_air::create_mix(g);
     CESolver CE(gas, constraint);   // Construct CESolver class for minimization.
 
-    double T, T_base = 300.0, P;
-    double U, V = 1.0;
+    double T, T_base = 300.0;
+    double U, U_base = 5e5;
+    double P = 101325.0, V = 1.0 / 1.225;
 
     int N = 500000;
     auto start = NOW;
     for (int i = 0; i < N; ++i) {
-        T = T_base + i * (20000.0 - 300.0) / N;
-        CE.compute_equilibrium(T, V); // Solve minimization 
+        U = distU(gen);
+        V = distV(gen);
+        CE.compute_equilibrium(U, V); // Solve minimization 
     }
     
     auto end = NOW;
     auto duration = chrono::duration<double>(end - start).count();
 
-    CE.print_properties();
+    // CE.print_properties();
 
-    cout << endl << "OLD version total time: " << setprecision(8) << duration << "-- Time per call = " << fixed << setprecision(8) << duration / N << " s." << endl << endl;
-
-    // ====================== NEW VERSION ========================
-
-    auto start1 = NOW;
-    for (int i = 0; i < N; ++i) {
-        T = T_base + i * (20000.0 - 300.0) / N;
-        CE.CFD_equilibrium(T, V); // Solve minimization 
-    }
-    
-    auto end1 = NOW;
-    auto duration1 = chrono::duration<double>(end1 - start1).count();
-
-    CE.print_properties();
-
-    cout << endl << "NEW version total time: " << setprecision(8) << duration1 << "-- Time per call = " << fixed << setprecision(8) << duration1 / N << " s." << endl << endl;
+    cout << endl << "Total time: " << setprecision(8) << duration << "-- Time per call = " << fixed << setprecision(8) << duration / N << " s." << endl << endl;
 
     return 0;
 }
