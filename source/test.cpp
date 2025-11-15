@@ -20,11 +20,11 @@ int main() {
 
     double T = 300;
     double P = ATM;
-    double U = 3e7;
+    double U = 5e6;
     double V = 1/1.225;
 
     CE.compute_equilibrium(U,V); // Solve minimization 
-    CE.print_properties();
+    print_properties(gas);
 
     return 0;
 }

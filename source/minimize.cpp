@@ -23,26 +23,9 @@ int main() {
     auto end = NOW;
     auto duration = chrono::duration<double>(end - start).count();
 
-    CE.print_properties();
+    print_properties(gas);
 
     cout << endl << "Old time: " << setprecision(8) << duration << endl;
 
-
-    constraint = ConstraintType::UV; // Set minimization procedure
-    double U = 1e7;
-    double V = 1 / 1.225;
-
-    CESolver CE1(gas, constraint);   // Construct CESolver class for minimization.
-
-    start = NOW;
-
-    CE1.compute_equilibrium(U,V); // Solve minimization 
-    
-    end = NOW;
-    duration = chrono::duration<double>(end - start).count();
-
-    CE1.print_properties();
-
-    cout << endl << "Old time: " << setprecision(8) << duration << endl;
     return 0;
 }

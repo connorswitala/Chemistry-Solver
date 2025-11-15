@@ -9,10 +9,13 @@ using namespace std;
 
 
 // Prints NASA thermodynamic data for gas mix
-inline void print_NASA_mix(const mix& gas);
+void print_NASA_mix(const mix& gas);
 
 // Prints NASA thermodynamic data for a vector of strings holding species names
 void print_NASA(vector<string> species_names);
+
+// Print all properties of gas mixture
+void print_properties(mix & gas);
 
 namespace common {
 

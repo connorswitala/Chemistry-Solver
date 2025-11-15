@@ -81,7 +81,8 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
     string ions;
     if (gas.HAS_IONS) ions = " and charge constraint enforced";
     else ions = " and no charge constraint";
-    cout << "-- Chemical equilibrium configuration complete. Using " << energy << " minimization with " << contraint << " held constant" << ions << endl << endl;
+    cout << "-- Chemical equilibrium configuration complete." << endl;
+    cout << "-- Using " << energy << " minimization with " << contraint << " held constant" << ions << endl << endl;
 }
 
 void CESolver::CFD_equilibrium(double T, double V) {
@@ -166,7 +167,7 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
     double e, rlntot;
 
     int iteration = 0;
-    int maxiter = 500;
+    int maxiter = 200;
     vector<double> DlnNj(NS);
 
     // Initial conditions
@@ -222,11 +223,10 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
         gas.T *= exp(e * DELTA[J_SIZE - 1]);
 
         iteration++;
+
         // Check convergence
         converged = check_convergence(DlnNj.data(), dlnn);
         if (fabs(DELTA[J_SIZE - 1]) > 1.0e-5) converged = false;
-        double ucon = gas.up * gcon * gas.T + gas.e_ref - gas.uo;
-        if (fabs(ucon) >= 0.5e-4) converged = false;
         if (converged) iteration = maxiter;        
     }
 
@@ -322,9 +322,9 @@ inline void CESolver::compute_equilibrium_SP(double& S, double& P) {
 }
 
 inline void CESolver::findTRange() {
-    if      (gas.T >= 200.0   && gas.T < 1000.0)   T_flag = 0;
-    else if (gas.T >=  1000.0  && gas.T < 6000.0)   T_flag = 1;
-    else if (gas.T >=  6000.0  && gas.T <= 20000.0)  T_flag = 2;
+    if      (gas.T >= 200.0   && gas.T <= 1000.0)   T_flag = 0;
+    else if (gas.T >  1000.0  && gas.T <= 6000.0)   T_flag = 1;
+    else if (gas.T >  6000.0  && gas.T <= 20000.0)  T_flag = 2;
     else {
         T_flag = -1;
         cout << "T = " << gas.T << ", outside polynomial range" << endl;
@@ -405,39 +405,9 @@ inline void CESolver::compute_mixture_properties() {
             gas.MW += gas.X[i] * gas.species[i].mw;
     }
 
-    gas.R = gcon / gas.MW;
+    gas.R = gcon * gas.N_tot;
     for (int i = 0; i < NS; ++i) {
             gas.Y[i] = (gas.X[i] * gas.species[i].mw) / gas.MW;
-    }
-}
-
-void CESolver::print_properties() {
-
-    cout << endl << setw(30) << "Mixture Temperature: " << gas.T << " [K]" << endl;
-    cout << setw(30) << "Mixture Pressure: " << gas.p / 1000.0 << " [kPa]" << endl;
-    cout << setw(30) << "Mixture Specific Volume: " << gas.V << " [m^3/kg]" << endl;
-    cout << setw(30) << "Mixture Internal Energy: " << gas.up / 1000.0 << " [kJ/kg]" << endl;
-    cout << setw(30) << "Mixture Density: " << gas.rho << " [kg/m^3]" << endl;
-    cout << setw(30) << "Mixture Gas Constant: " << gas.R << " [J/kg-K]" << endl;
-    cout << setw(30) << "Mixture MW: " << gas.MW << " [g/mol]" << endl;
-    cout << setw(30) << "Mixture cp: " << gas.cp << " [J/kg-K]" << endl;
-    cout << setw(30) << "Mixture cv: " << gas.cv << " [J/kg-K]" << endl;
-    cout << setw(30) << "Mixture gamma: " << gas.gamma << endl;
-    cout << setw(30) << "Mixture a: " << gas.c << endl;
-    cout << setw(30) << "Mixture dpdr: " << gas.dpdr << endl;
-    cout << setw(30) << "Mixture dtdr: " << gas.dtdr << endl;
-
-
-    cout << endl << setw(67) << "====: Species Molar Fractions :==== " << endl;
-    for (int i = 0; i < NS; ++i) {
-        cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.X[i] << "\t";
-        if ((i + 1) % 4 == 0) cout << endl;
-    }
-
-    cout << endl << endl << setw(67) <<  "====: Species Mass Fractions :==== " << endl;
-    for (int i = 0; i < NS; ++i) {
-        cout << setw(10) << gas.species[i].name << ": " << fixed << setprecision(4) << gas.Y[i] << "\t";
-        if ((i + 1) % 4 == 0) cout << endl;
     }
 }
 
@@ -483,12 +453,12 @@ inline void CESolver::compute_derivatives() {
 
     int size = NE + 1;
     vector<double> A(size * size, 0.0), RHS(size, 0.0), x(size, 0.0);
-    int offset;
+    int offset, idx = NE + gas.HAS_IONS;
 
     vector<double> anh(NE, 0.0);
     vector<double> an(NE, 0.0);
 
-    double a, sum = 0.0, sum1 = 0.0;
+    double sum = 0.0, sum1 = 0.0;
 
     // ===== Derivatives wrt T =====
     
@@ -498,18 +468,15 @@ inline void CESolver::compute_derivatives() {
 
         for (int i = 0; i < NE; ++i) {
             for (int j = 0; j < NS; ++j)
-                A[offset + i] += gas.a[k * NS + j] * gas.a[i * NS + j] * gas.N[j];
+                A[offset + i] = J[k * J_SIZE + i];
         }
 
         for (int j = 0; j < NS; ++j) {
-            a = gas.a[k * NS + j] * gas.N[j]; 
-            an[k] += a; 
-            anh[k] += a * gas.H0_RT[j];
-            
+            an[k] += gas.a[k * NS + j] * gas.N[j];       
         }
 
         A[offset + NE] = an[k];
-        RHS[k] = -anh[k];
+        RHS[k] = -(J[k * J_SIZE + idx] + an[k]);
     }
 
     for (int i = 0; i < NE; ++i) 
@@ -529,21 +496,19 @@ inline void CESolver::compute_derivatives() {
     for (int j = 0; j < NS; ++j) 
         gas.cp += gas.N[j] * gas.CP0_R[j];
 
-    for (int i = 0; i < NE; ++i)
-        gas.cp += anh[i] * x[i];
 
-
-    for (int j = 0; j < NS; ++j) {
-        a = gas.N[j] * gas.H0_RT[j];
-        sum += a;
-        sum1 += a * gas.H0_RT[j];
+    for (int i = 0; i < NE; ++i) {        
+        gas.cp += (J[i * J_SIZE + idx] + an[i]) * x[i];        
     }
-    
-    gas.cp += sum * x[size - 1] + sum1;
+
+    for (int j = 0; j < NS; ++j)
+        gas.cp += gas.N[j] * gas.H0_RT[j] * (dlndlt + gas.H0_RT[j]);
 
     // ===== Derivatives wrt P =====
-    for (int k = 0; k < NE; ++k) 
+    
+    for (int k = 0; k < NE; ++k) {
         RHS[k] = an[k];
+    }   
 
     RHS[size - 1] = 0.0;
     for (int j = 0; j < NS; ++j)
@@ -554,17 +519,16 @@ inline void CESolver::compute_derivatives() {
     double dlvdlp = x[size - 1] - 1.0;
     double dlvdlt = 1.0 + dlndlt;
 
-    double dlvdlt_sq = dlvdlt * dlvdlt;
-
     gas.p = gas.rho * gas.N_tot * gcon * gas.T;
-    gas.cv = gas.cp + (gas.p * dlvdlt_sq) / (gas.rho * gas.T * dlvdlp) / gcon;
+    gas.cv = gas.cp + (gas.p * dlvdlt * dlvdlt) / (gas.rho * gas.T * dlvdlp) / gcon;
     gas.cp *= gcon;
     gas.cv *= gcon;
     gas.gamma = gas.cp / gas.cv;
     double gammas = -gas.gamma / dlvdlp;
 
-    double deno = dlvdlt_sq + gas.cp * dlvdlp / gcon;
-    gas.dpdr = gas.p / gas.rho * (dlvdlt - gas.cp/gcon) / deno;
+    double deno = dlvdlt * dlvdlt + gas.cp * dlvdlp / gas.R;
+
+    gas.dpdr = gas.p / gas.rho * (dlvdlt - gas.cp/gas.R) / deno;
     gas.dtdr = -gas.T / gas.rho * (dlvdlt + dlvdlp) / deno;
     gas.c = sqrt(gas.N_tot * gcon * gas.T * gammas);
 }

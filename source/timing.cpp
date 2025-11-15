@@ -23,7 +23,7 @@ int main() {
     double U = 8e5, U_base = 5e5;
     double P = 101325.0, V = 1.0 / 1.225;
 
-    int N = 500000;
+    int N = 1000000;
     auto start = NOW;
     for (int i = 0; i < N; ++i) {
         U = distU(gen);

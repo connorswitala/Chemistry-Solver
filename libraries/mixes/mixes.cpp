@@ -1,7 +1,7 @@
 #include "mixes.h"
 
 
-inline void print_NASA_mix(const mix& gas) {
+void print_NASA_mix(const mix& gas) {
     const int W_NAME   = 12;
     const int W_INT    = 8;
     const int W_DOUBLE = 20;
@@ -64,6 +64,110 @@ void print_NASA(vector<string> species_names) {
     }
 }
 
+void print_properties(mix& gas) {
+
+    struct Prop {
+        string label;
+        double value;
+        string unit;
+    };
+
+    // Left column: normal decimal (fixed)
+    vector<Prop> leftProps = {
+        {"Mixture Temperature:",     gas.T,          "[K]"},
+        {"Mixture Density:",         gas.rho,        "[kg/m^3]"},
+        {"Mixture Specific Volume:", gas.V,          "[m^3/kg]"},
+        {"Mixture MW:",              gas.MW,         "[g/mol]"},
+        {"Mixture R:",               gas.R,          "[J/kg-K]"},
+        {"Mixture cp:",              gas.cp,         "[J/kg-K]"},
+        {"Mixture cv:",              gas.cv,         "[J/kg-K]"},
+        {"Mixture a:",               gas.c,          "[m/s]"},
+        {"Mixture gamma:",           gas.gamma,      ""}
+    };
+
+    // Right column: scientific
+    vector<Prop> rightProps = {
+        {"Mixture Pressure:",        gas.p, "[Pa]"},
+        {"Mixture Internal Energy:", gas.up,"[J/kg]"},
+        {"Mixture dpdr:",            gas.dpdr,       ""},
+        {"Mixture dtdr:",            gas.dtdr,       ""}
+    };
+
+    const int labelW = 24;
+    const int valueW = 14;
+    const int unitW  = 10;
+
+    cout << "\n";
+
+    size_t nRows = max(leftProps.size(), rightProps.size());
+
+    for (size_t i = 0; i < nRows; ++i) {
+
+        // ----- Left column: fixed -----
+        if (i < leftProps.size()) {
+            const auto& a = leftProps[i];
+
+            cout << left  << setw(labelW) << a.label;
+
+            cout << fixed << setprecision(5);
+            cout << right << setw(valueW) << a.value << " ";
+
+            cout << left  << setw(unitW)  << a.unit;
+        } else {
+            // no left entry, just pad
+            cout << setw(labelW + valueW + unitW + 1) << " ";
+        }
+
+        cout << "   "; // spacing between columns
+
+        // ----- Right column: scientific -----
+        if (i < rightProps.size()) {
+            const auto& b = rightProps[i];
+
+            cout << left  << setw(labelW) << b.label;
+
+            cout << scientific << setprecision(5);
+            cout << right << setw(valueW) << b.value << " ";
+
+            cout << left  << setw(unitW)  << b.unit;
+        }
+
+        cout << "\n";
+    }
+
+    // Reset for species table
+    cout.unsetf(ios::floatfield);
+    cout << fixed << setprecision(6);
+
+    // Species table: name, mass fraction, molar fraction
+    cout << "\n"
+         << "================= Species Concentrations =================\n";
+
+    const int nameW  = 12;
+    const int fracW  = 14;
+
+    // Header
+    cout << left  << setw(nameW) << "Species"
+         << right << setw(fracW) << "Y (mass)"
+         << right << setw(fracW) << "X (molar)"
+         << "\n";
+
+    // Underline
+    cout << left  << setw(nameW) << string(nameW - 1, '-')
+         << right << setw(fracW) << string(fracW - 1, '-')
+         << right << setw(fracW) << string(fracW - 1, '-')
+         << "\n";
+
+    // Rows
+    for (int i = 0; i < gas.NS; ++i) {
+        cout << left  << setw(nameW) << gas.species[i].name
+             << right << setw(fracW) << gas.Y[i]
+             << right << setw(fracW) << gas.X[i]
+             << "\n";
+    }
+
+    cout << endl;
+}
 
 namespace common {
 
@@ -230,8 +334,6 @@ mix create_mixture(vector<string>& speciesNames, vector<string>& elementNames, v
 
     cout << endl << "-- " << gas.NS << " species gas mix created. Contains: ";
     for (int i = 0; i < gas.NS; ++i) cout << gas.species[i].name << " ";
-    cout << endl;
-
     cout << endl;
     return gas;    
 }

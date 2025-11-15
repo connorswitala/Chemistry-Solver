@@ -3,7 +3,7 @@
 using namespace std;
 
 int main() {
-    GasType g = GasType::AIR5;                     // Set gas type
+    GasType g = GasType::AIR11;                     // Set gas type
     ConstraintType constraint = ConstraintType::UV; // Set minimization procedure
 
     mix gas = common::air_mixture(g);
@@ -20,23 +20,30 @@ int main() {
     // Sweep settings
     double V = 1.0/1.225;   // Pa
     double e_min = 5e5;  // K
-    int    N     = 20000;
 
     // Buffers for BLOCK output
-    vector<double> Tvals(N, 0.0);
-    vector<vector<double>> Y(gas.NS, vector<double>(N, 0.0));
+    vector<double> Tvals;
+    vector<vector<double>> Y(gas.NS, vector<double>(0.0));
+    vector<double> dpdr;
+    vector<double> dtdr;
+    vector<double> cv;
 
     // Compute equilibrium across the sweep
     auto start = chrono::high_resolution_clock::now();
 
-    for (int i = 0; i < N; ++i) {
-        double e = e_min + i * (1.3e7 - e_min) / (N - 1);
+    int i = 0;
+    while (gas.T < 19500.0) {
+        double e = e_min + i * 500.0;
         CE.compute_equilibrium(e, V);
 
-        Tvals[i] = gas.T;
+        Tvals.push_back(gas.T);
         for (int j = 0; j < gas.NS; ++j) {
-            Y[j][i] = gas.Y[j];
+            Y[j].push_back(gas.Y[j]);
         }
+        dpdr.push_back(gas.dpdr);
+        dtdr.push_back(gas.dtdr);
+        cv.push_back(gas.cv);
+        i++;
     }
 
     auto end = chrono::high_resolution_clock::now();
@@ -51,10 +58,11 @@ int main() {
     for (int j = 0; j < gas.NS; ++j) {
         write << ", \"Y(" << gas.species[j].name << ")\"";
     }
+    write << ", \"dpdr\", \"dtdr\", \"cv\"";
     write << "\n";
 
     // One 1D zone with N points
-    write << "ZONE T=\"TP_Sweep\", I=" << N << ", F=BLOCK\n";
+    write << "ZONE T=\"TP_Sweep\", I=" << Y[0].size() << ", F=BLOCK\n";
 
     // Helper lambda to dump a vector with consistent formatting
     auto dump_vec = [&](const vector<double>& v) {
@@ -71,11 +79,14 @@ int main() {
     // BLOCK order: all T, then all P, then each Y_j
     dump_vec(Tvals);
     for (int j = 0; j < gas.NS; ++j) dump_vec(Y[j]);
+    dump_vec(dpdr);
+    dump_vec(dtdr);
+    dump_vec(cv);
 
     write.close();
 
     cout << "\nTotal time: " << fixed << setprecision(8) << duration
-         << " s  -- Time per call = " << duration / N << " s.\n"
+         << " s  -- Time per call = " << scientific << duration / i << " s.\n"
          << "-- Tecplot file saved to " << filename << "\n";
 
     return 0;
