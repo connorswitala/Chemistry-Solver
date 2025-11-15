@@ -13,7 +13,7 @@ int main() {
     std::uniform_int_distribution<> distU(5e5, 1e7);
 
 
-    GasType g = GasType::AIR11;
+    GasType g = GasType::AIR5;
     mix gas = common::air_mixture(g);
     ConstraintType constraint = ConstraintType::UV; // Set minimization procedure
 

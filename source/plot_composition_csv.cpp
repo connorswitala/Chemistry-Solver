@@ -33,7 +33,7 @@ int main() {
     auto start = chrono::high_resolution_clock::now();
 
     while (gas.T < 19500.0) {
-        double  U = U_min + 5000.0 * i;
+        double  U = U_min + 175.0 * i;
         CE.compute_equilibrium(U, V);
 
         // Write one row per temperature
@@ -53,6 +53,7 @@ int main() {
     cout << "\nTotal time: " << fixed << setprecision(8) << duration
          << " s  -- Time per call = " << duration / i << " s.\n"
          << "-- CSV file saved to " << filename << "\n";
+    cout << "Iterations: " << i << endl;
 
     return 0;
 }

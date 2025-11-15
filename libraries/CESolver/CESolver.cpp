@@ -185,7 +185,7 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
         // gas.e_ref = 0.0;
         for (int j = 0; j < NS; ++j) {
             gas.up += gas.N[j] * gas.U0_RT[j];
-            // gas.e_ref += gas.N[j] * gas.species[j].href;
+            gas.e_ref += gas.N[j] * gas.species[j].href;
         }
 
         // Form matrix system
@@ -221,13 +221,12 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
         // Get new temperature
         gas.T *= exp(e * DELTA[J_SIZE - 1]);
 
-
         iteration++;
         // Check convergence
         converged = check_convergence(DlnNj.data(), dlnn);
-        if (fabs(DELTA[J_SIZE - 1]) > 1.0e-4) converged = false;
-        // double ucon = gas.up * gcon * gas.T + gas.e_ref - gas.uo;
-        // if (fabs(ucon) >= 0.5e-4) converged = false;
+        if (fabs(DELTA[J_SIZE - 1]) > 1.0e-5) converged = false;
+        double ucon = gas.up * gcon * gas.T + gas.e_ref - gas.uo;
+        if (fabs(ucon) >= 0.5e-4) converged = false;
         if (converged) iteration = maxiter;        
     }
 
@@ -242,10 +241,8 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
     //     gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href);
     // }
 
-    // compute_mixture_properties();
-    // compute_derivatives();
-
-    // gas.p = gas.rho * gas.R  * gas.T;
+    compute_mixture_properties();
+    compute_derivatives();
 
 }
 
@@ -525,8 +522,6 @@ inline void CESolver::compute_derivatives() {
     LUSolve(A.data(), RHS.data(), x.data(), size, 1);
 
     double dlndlt = x[size - 1];
-    double dlvdlt = 1.0 + dlndlt;
-
 
     // ===== Compute cp =====
     gas.cp = 0.0;
@@ -545,9 +540,6 @@ inline void CESolver::compute_derivatives() {
     }
     
     gas.cp += sum * x[size - 1] + sum1;
-    gas.cp *= gcon;
-
-    gas.p = gas.rho * gas.N_tot * gcon * gas.T;
 
     // ===== Derivatives wrt P =====
     for (int k = 0; k < NE; ++k) 
@@ -560,12 +552,16 @@ inline void CESolver::compute_derivatives() {
     LUSolve(A.data(), RHS.data(), x.data(), size, 1);
 
     double dlvdlp = x[size - 1] - 1.0;
+    double dlvdlt = 1.0 + dlndlt;
+
     double dlvdlt_sq = dlvdlt * dlvdlt;
 
-    gas.cv = gas.cp + (gas.p * dlvdlt_sq) / (gas.rho * gas.T * dlvdlp);
+    gas.p = gas.rho * gas.N_tot * gcon * gas.T;
+    gas.cv = gas.cp + (gas.p * dlvdlt_sq) / (gas.rho * gas.T * dlvdlp) / gcon;
+    gas.cp *= gcon;
+    gas.cv *= gcon;
     gas.gamma = gas.cp / gas.cv;
     double gammas = -gas.gamma / dlvdlp;
-
 
     double deno = dlvdlt_sq + gas.cp * dlvdlp / gcon;
     gas.dpdr = gas.p / gas.rho * (dlvdlt - gas.cp/gcon) / deno;

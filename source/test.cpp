@@ -20,7 +20,7 @@ int main() {
 
     double T = 300;
     double P = ATM;
-    double U = 5e7;
+    double U = 3e7;
     double V = 1/1.225;
 
     CE.compute_equilibrium(U,V); // Solve minimization 
