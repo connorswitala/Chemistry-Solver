@@ -10,7 +10,7 @@ int main() {
     GasType g = GasType::AIR7; // Set gas type
     ConstraintType constraint = ConstraintType::TP; // Set minimization procedure
 
-    mix gas = common::air_mixture(g);
+    mix gas = common_mixture(g);
     CESolver CE(gas, constraint);   // Construct CESolver class for minimization.
 
     double T = 6000;

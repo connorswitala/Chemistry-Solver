@@ -6,7 +6,7 @@ int main() {
     GasType g = GasType::AIR11;                     // Set gas type
     ConstraintType constraint = ConstraintType::UV; // Set minimization procedure
 
-    mix gas = common::air_mixture(g);
+    mix gas = common_mixture(g);
     CESolver CE(gas, constraint);                   // Construct CESolver
 
     // Output CSV file

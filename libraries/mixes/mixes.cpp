@@ -169,97 +169,112 @@ void print_properties(mix& gas) {
     cout << endl;
 }
 
-namespace common {
+mix common_mixture(GasType gastype) {
+    mix gas;
+    switch (gastype) {
+        case::GasType::AIR5:
+            gas = make_air5();
+            gas.name = "AIR5";
+            return gas;
+            break;
 
-    mix air_mixture(GasType gastype) {
-        mix gas;
-        switch (gastype) {
-            case::GasType::AIR5:
-                gas = common::make_air5();
-                gas.name = "AIR5";
-                return gas;
-                break;
+        case::GasType::AIR7:
+            gas = make_air7();
+            gas.name = "AIR7";
+            return gas;
+            break;    
 
-            case::GasType::AIR7:
-                gas = common::make_air7();
-                gas.name = "AIR7";
-                return gas;
-                break;    
+        case::GasType::AIR11:
+            gas = make_air11();
+            gas.name = "AIR11";
+            return gas;
+            break;
 
-            case::GasType::AIR11:
-                gas = common::make_air11();
-                gas.name = "AIR11";
-                return gas;
-                break;
+        case::GasType::AIR11_AR:
+            gas = make_air11_Ar();
+            gas.name = "AIR11_AR";
+            return gas;
+            break;
 
-            case::GasType::AIR11_AR:
-                gas = common::make_air11_Ar();
-                gas.name = "AIR11_AR";
-                return gas;
-                break;
+        case::GasType::AIR13:
+            gas = make_air13();
+            gas.name = "AIR13";
+            return gas;
+            break;
 
-            case::GasType::AIR13:
-                gas = common::make_air13();
-                gas.name = "AIR13";
-                return gas;
-                break;
-        }
-    }
-
-    mix make_air5() {
-
-        vector<string> species = {"N2", "O2", "NO", "N", "O"};        
-        vector<string> elements = {"N", "O"};
-        vector<double> initial = {0.7572, 0.2428}; 
-
-        mix gas = create_mixture(species, elements, initial);
-
-        return gas;
-    }
-
-    mix make_air7() {
-        vector<string> species = {"N2", "O2", "NO", "N", "O", "NO+", "e-"};        
-        vector<string> elements = {"N", "O"};
-        vector<double> initial = {0.7572, 0.2428}; 
-
-        mix gas = create_mixture(species, elements, initial);
-
-        return gas;
-    }
-
-    mix make_air11_Ar() {
-        
-
-        vector<string> species = {"N2", "O2", "NO", "N", "O", "Ar", "NO+", "N+", "O+", "Ar+", "e-"};        
-        vector<string> elements = {"N", "O", "Ar"};
-        vector<double> initial = { 0.755, 0.232, 0.0129}; 
-
-        mix gas = create_mixture(species, elements, initial);
-
-        return gas;
-    }
-
-    mix make_air11() {
-
-        vector<string> species = {"N2", "O2", "NO", "N", "O", "N2+", "O2+", "NO+", "N+", "O+", "e-"};        
-        vector<string> elements = {"N", "O"};
-        vector<double> initial = {0.7572, 0.2428}; 
-
-        mix gas = create_mixture(species, elements, initial);
-
-        return gas;       
-    }
-
-    mix make_air13() {
-        vector<string> species = {"N2", "O2", "NO", "N", "O", "Ar", "N2+", "O2+", "NO+", "N+", "O+", "Ar+", "e-"};        
-        vector<string> elements = {"N", "O", "Ar"};
-        vector<double> initial = { 0.755, 0.232, 0.0129}; 
-
-        mix gas = create_mixture(species, elements, initial);
-
-        return gas;
+        case::GasType::MARS8:
+            gas = make_mars8();
+            gas.name = "AIR13";
+            return gas;
+            break;
     }
 }
+
+mix make_air5() {
+
+    vector<string> species = {"N2", "O2", "NO", "N", "O"};        
+    vector<string> elements = {"N", "O"};
+    vector<double> initial = {0.7572, 0.2428}; 
+
+    mix gas = create_mixture(species, elements, initial);
+
+    return gas;
+}
+
+mix make_air7() {
+    vector<string> species = {"N2", "O2", "NO", "N", "O", "NO+", "e-"};        
+    vector<string> elements = {"N", "O"};
+    vector<double> initial = {0.7572, 0.2428}; 
+
+    mix gas = create_mixture(species, elements, initial);
+
+    return gas;
+}
+
+mix make_air11_Ar() {
+    
+
+    vector<string> species = {"N2", "O2", "NO", "N", "O", "Ar", "NO+", "N+", "O+", "Ar+", "e-"};        
+    vector<string> elements = {"N", "O", "Ar"};
+    vector<double> initial = { 0.755, 0.232, 0.0129}; 
+
+    mix gas = create_mixture(species, elements, initial);
+
+    return gas;
+}
+
+mix make_air11() {
+
+    vector<string> species = {"N2", "O2", "NO", "N", "O", "N2+", "O2+", "NO+", "N+", "O+", "e-"};        
+    vector<string> elements = {"N", "O"};
+    vector<double> initial = {0.7572, 0.2428}; 
+
+    mix gas = create_mixture(species, elements, initial);
+
+    return gas;       
+}
+
+mix make_air13() {
+    vector<string> species = {"N2", "O2", "NO", "N", "O", "Ar", "N2+", "O2+", "NO+", "N+", "O+", "Ar+", "e-"};        
+    vector<string> elements = {"N", "O", "Ar"};
+    vector<double> initial = { 0.755, 0.232, 0.0129}; 
+
+    mix gas = create_mixture(species, elements, initial);
+
+    return gas;
+}
+
+mix make_mars8() {
+
+    vector<string> species = {"CO2", "N2", "O2", "CO", "O", "C", "NO", "N"};        
+    vector<string> elements = {"C", "O", "N"};
+    vector<double> initial = {0.264, 0.7186, 0.0174}; 
+
+    mix gas = create_mixture(species, elements, initial);
+
+    return gas;
+}
+
 
 
 mix create_mixture(vector<string>& speciesNames, vector<string>& elementNames, vector<double>& initial_Y) {

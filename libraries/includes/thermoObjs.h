@@ -8,7 +8,7 @@ using namespace std;
 
 enum class EnergyType {Helmholtz, Gibbs};
 enum class ConstraintType {TP, HP, SP, TV, UV, SV};
-enum class GasType {AIR5, AIR7, AIR11, AIR11_AR, AIR13, CREATE};
+enum class GasType {AIR5, AIR7, AIR11, AIR11_AR, AIR13, MARS8};
 
 struct SpeciesInfo {
     string name;        // Name of species

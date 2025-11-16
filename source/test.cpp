@@ -6,7 +6,7 @@ int main() {
 
    
     GasType g = GasType::AIR5;
-    mix gas = common::air_mixture(g);
+    mix gas = common_mixture(g);
 
     // vector<string> species = {"CO2", "N2", "O2", "CO", "O", "C", "NO", "N"};        
     // vector<string> elements = {"C", "O", "N"};
