@@ -10,6 +10,8 @@ The second program is the command-line driven code that lets you choose options 
 
 The `--mode` option tells the program which mode it is running in. By inputting `--mode=sweep` you can change the programs from a standalone minimization given a single value for T and P, to a verson that sweeps through an user-input min and max temperature value and then plots the results to a user-named file.
 
+The `--constraint` option tells the programs with minimization procedure to use. TP, TV, UV, CFD are the current ones available. It needs to be in caps when input as well. For example`--constraint=TP`.
+
 The `--species` option tells the program which species you want to include in the minimization process. You can list your own with comma (and space) separated variables as such: `--species=N2, O2, NO, N, O`. If you choose to build species this way, you will need to specify a couple more things like `--elements` and `-Y`. If instead you use an already created mixture (available ones are air5, air7, air11, air13, mars8), you can do so with `--species=air11`, for example. This will fill in the `--elements` and `-Y` flags for you as well. You can always double check what needs to be filled in with the `show` command.
 
 If you do need to specifiy elements and mass fractions, you can do so with `--elements=N, O` and also `-Y=0.7572, 0.2428`. Just make sure that the order that you input the mass fractions lines up with the elemental ordering.
