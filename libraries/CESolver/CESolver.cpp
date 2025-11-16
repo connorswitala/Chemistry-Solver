@@ -1,11 +1,13 @@
 #include "CESolver.h"
 
+// Constructor function
+CESolver::CESolver(mix& gas_in, ConstraintType constrainttype) : gas(gas_in) {
 
-CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
-
+    // For terminial output
     string energy;
     string contraint;
 
+    // Create Newton solver Matrix/Vector sizes and set booleans/function pointers.
     switch (constrainttype) {
         case::ConstraintType::TP:
             gas.NEEDS_T = false;
@@ -72,6 +74,16 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
             J_SIZE = NE + gas.HAS_IONS + gas.NEEDS_T;
             gas.J_SIZE = J_SIZE;
             break;
+
+        case::ConstraintType::CFD:
+            gas.NEEDS_T = true;
+            energy = "Helmholtz";
+            contraint = "internal energy and density";
+            NS = gas.NS;
+            NE = gas.NE;
+            J_SIZE = NE + gas.HAS_IONS + gas.NEEDS_T;
+            gas.J_SIZE = J_SIZE;
+            break;
     }
 
     J = vector<double>(J_SIZE * J_SIZE);
@@ -85,14 +97,96 @@ CESolver::CESolver(mix& gas_in, ConstraintType& constrainttype) : gas(gas_in) {
     cout << "-- Using " << energy << " minimization with " << contraint << " held constant" << ions << endl << endl;
 }
 
-void CESolver::CFD_equilibrium(double T, double V) {
-    cout << "Incomplete" << endl;   
+void CESolver::CFD_equilibrium(double& e, double& rho) {
+    bool converged = false;
+
+    gas.rho = rho;
+    gas.uo = e;
+
+    double eps;     // Damping coefficient
+    double rlntot;  // Total ln(N)
+
+    int iteration = 0;
+    int maxiter = 200;
+    vector<double> DlnNj(NS);
+
+    // Initial conditions
+    gas.N_tot = 0.0;
+    for (int j = 0; j < NS; ++j) {
+        gas.N[j] = gas.X0[j];
+        gas.N_tot += gas.N[j];
+    }
+
+    // Being iterations
+    while (iteration < maxiter) {
+
+        NASA_fits();    // Call NASA fits to update temperature dependant variables
+
+        // Compute u'
+        gas.up = 0.0;
+        for (int j = 0; j < NS; ++j) {
+            gas.up += gas.N[j] * gas.U0_RT[j];
+        }
+
+        helm::compute_mu(gas);                          // Compute chemical potential
+        helm::form_elemental(J.data(), F.data(), gas);  // Form elemental constrains part of Jacobian and RHS
+        if (gas.HAS_IONS) 
+            helm::form_charge(J.data(), F.data(), gas); // If ions present, form charge constraint section
+        helm::form_U(J.data(), F.data(), gas);          // Form ln(T) row
+
+        LUSolve(J.data(), F.data(), DELTA.data(), J_SIZE, 1);   // Solve matrix system
+
+        rlntot = 0.0; 
+
+        // Reform Dln(N_j)
+        for (int j = 0; j < NS; ++j) {
+            DlnNj[j] =  gas.U0_RT[j] * DELTA[J_SIZE - 1] - gas.mu_RT[j];
+            for (int i = 0; i < NE; ++i) {
+                DlnNj[j] += gas.a[i * NS + j] * DELTA[i];
+            }
+            if (gas.HAS_IONS) DlnNj[j] += gas.species[j].q * DELTA[NE];
+            rlntot += gas.N[j] * DlnNj[j];
+        }
+
+        rlntot /= gas.N_tot;
+
+        eps = compute_damping(DlnNj, rlntot, DELTA[J_SIZE - 1]);  // 
+
+        // Update N[j]
+        gas.N_tot = 0.0;
+        for (int j = 0; j < NS; ++j) {
+            gas.N[j] = max(gas.N[j] * exp(eps *DlnNj[j]), 1e-18);
+            gas.N_tot += gas.N[j];
+        }
+
+        // Get new temperature
+        gas.T *= exp(eps * DELTA[J_SIZE - 1]);
+
+        iteration++;
+
+        // Check convergence
+        converged = check_convergence(DlnNj.data(), rlntot);
+        if (fabs(DELTA[J_SIZE - 1]) > 1.0e-5) converged = false;
+        if (converged) iteration = maxiter;
+    }
+
+    // Get final molar concentrations
+    for (int j = 0; j < NS; ++j) {
+        gas.X[j] = gas.N[j] / gas.N_tot;
+        gas.X0[j] = gas.N[j];
+    }
+
+    compute_mixture_properties();   // Compute molecular weights 
+    compute_derivatives();          // Find important derivatives
 }
 
+// Universal function caller
 void CESolver::compute_equilibrium(double& a, double& b) {
     (this->*equilibrium)(a, b);
 }
 
+
+// ===== Mostly the same as CFD_equilibrium(), not commented =====
 inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
 
     bool converged = false;
@@ -113,7 +207,6 @@ inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
     }
 
     NASA_fits();
-    // auto start = NOW;
 
     while (!converged) {
 
@@ -150,8 +243,6 @@ inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
             gas.X0[j] = gas.N[j];
         }
         compute_mixture_properties();
-
-
 }
 
 inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
@@ -309,8 +400,7 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
     // gas.up = 0.0;
     // for (int j = 0; j < NS; ++j) {
     //     gas.up += gas.N[j] * (gas.U0_RT[j] * gcon * gas.T + gas.species[j].href);
-    // }
-    
+    // }    
 }
 
 inline void CESolver::compute_equilibrium_HP(double& H, double& P) {
@@ -320,6 +410,8 @@ inline void CESolver::compute_equilibrium_HP(double& H, double& P) {
 inline void CESolver::compute_equilibrium_SP(double& S, double& P) {
     cout << "Not made yet" << endl;
 }
+
+// ===== Helper functions =====
 
 inline void CESolver::findTRange() {
     if      (gas.T >= 200.0   && gas.T <= 1000.0)   T_flag = 0;
@@ -350,11 +442,9 @@ inline array<double, 7> CESolver::temp_base() {
 
 inline void CESolver::NASA_fits() {
 
-    // H(T) / RT = -a0 * T^(-2) + a1 * ln(T)/T + a2 + a3 * T/2 + a4 * T^2 / 3 + a5 * T^3/4 + a6 * T^4 / 5 + a7 / T
-    // S(T) / R = -a0 * T^(-2)/2 - a1 / T + a2 * ln(T) + a3 * T + a4 * T^2 / 2 + a5 * T^3/3 + a6 * T^4 / 4 + a8
 
-    findTRange();                           // Find the temperature range to use for NASA Polynomials
-    const auto Ts = temp_base();       // Calculate Temperature variables.
+    findTRange();                   // Find the temperature range to use for NASA Polynomials
+    const auto Ts = temp_base();    // Calculate temperature variables.
 
     for (int j = 0; j < NS; ++j) {
 
@@ -399,6 +489,7 @@ inline void CESolver::NASA_fits() {
 
 }
 
+// Compute molecular weights, gas constant, mass fractions
 inline void CESolver::compute_mixture_properties() {
     gas.MW = 0.0;
     for (int i = 0; i < NS; ++i) {
@@ -411,6 +502,7 @@ inline void CESolver::compute_mixture_properties() {
     }
 }
 
+// Convergence checker
 inline bool CESolver::check_convergence(double* dlnj, double& dln) {
 
     double sum = 0.0, check, tol = 0.5e-5;
@@ -418,12 +510,10 @@ inline bool CESolver::check_convergence(double* dlnj, double& dln) {
     for (int j = 0; j < NS; ++j)
         sum += gas.N[j];
 
-
     for (int j = 0; j < NS; ++j) {
         check = gas.N[j] * fabs(dlnj[j]) / sum;
         if (check > tol) return false;
     }
-
 
     check = gas.N_tot * fabs(dln) / sum;
     if (check > tol) return false;
@@ -431,8 +521,8 @@ inline bool CESolver::check_convergence(double* dlnj, double& dln) {
     return true;
 }
 
+// Compute damping coefficient for update to solution variables
 inline double CESolver::compute_damping(vector<double>& DlnNj, double& dlnN, double& dlnT) {
-
 
     double lam1 = 5.0 * max(max( fabs(*max_element(DlnNj.begin(), DlnNj.end())), fabs(dlnN)), dlnT);
     double lam2 = 1.0;
@@ -449,6 +539,7 @@ inline double CESolver::compute_damping(vector<double>& DlnNj, double& dlnN, dou
     return min(1.0, min(lam1, lam2));
 }
 
+// Compute derivatices for A_rho Jacobian
 inline void CESolver::compute_derivatives() {
 
     int size = NE + 1;

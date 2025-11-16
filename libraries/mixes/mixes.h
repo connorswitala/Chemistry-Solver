@@ -31,8 +31,11 @@ mix make_mars8();
 
 
 // Used for user-specification of mixture
-mix create_mixture(vector<string>& speciesNames, 
-                   vector<string>& elementNames, 
-                   vector<double>& initial_Y); 
+mix create_mixture(vector<string> speciesNames, 
+                   vector<string> elementNames, 
+                   vector<double> initial_Y); 
+
+
+mix mixFromString(string& s);
 
 #endif

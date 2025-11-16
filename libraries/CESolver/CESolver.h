@@ -2,23 +2,8 @@
 #define CESolver_H
 
 #include "../mixes/mixes.h"
-#include "../includes/functions.h"
 #include "../includes/math.h"
-#include "../includes/readNASA.h"
-
-//⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-//⠀⠀⠀⠀⣠⣶⡾⠏⠉⠙⠳⢦⡀⠀⠀⠀⢠⠞⠉⠙⠲⡀⠀
-//⠀⠀⠀⣴⠿⠏⠀⠀⠀⠀⠀⠀⢳⡀⠀⡏⠀⠀⠀⠀⠀⢷
-//⠀⠀⢠⣟⣋⡀⢀⣀⣀⡀⠀⣀⡀⣧⠀⢸⠀⠀⠀⠀⠀ ⡇
-//⠀⠀⢸⣯⡭⠁⠸⣛⣟⠆⡴⣻⡲⣿⠀⣸⠀⠀OK⠀ ⡇
-//⠀⠀⣟⣿⡭⠀⠀⠀⠀⠀⢱⠀⠀⣿⠀⢹⠀⠀⠀⠀⠀ ⡇
-//⠀⠀⠙⢿⣯⠄⠀⠀⠀⢀⡀⠀⠀⡿⠀⠀⡇⠀⠀⠀⠀⡼
-// ⠀⠀⠀⠹⣶⠆⠀⠀⠀⠀⠀⡴⠃⠀⠀⠘⠤⣄⣠⠞⠀
-//⠀⠀⠀⠀⠀⢸⣷⡦⢤⡤⢤⣞⣁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-//⠀⠀⢀⣤⣴⣿⣏⠁⠀⠀⠸⣏⢯⣷⣖⣦⡀⠀⠀⠀⠀⠀⠀
-//⢀⣾⣽⣿⣿⣿⣿⠛⢲⣶⣾⢉⡷⣿⣿⠵⣿⠀⠀⠀⠀⠀⠀
-//⣼⣿⠍⠉⣿⡭⠉⠙⢺⣇⣼⡏⠀⠀⠀⣄⢸⠀⠀⠀⠀⠀⠀
-//⣿⣿⣧⣀⣿.........⣀⣰⣏⣘⣆⣀⠀⠀
+#include "../includes/functions.h"
 
 
 class CESolver {
@@ -28,15 +13,13 @@ class CESolver {
     mix& gas; // Main object that solver manipulates.
 
     // Main constructor functions
-    CESolver(mix& gas_in, ConstraintType& contrainttype); 
+    CESolver(mix& gas_in, ConstraintType contrainttype); 
 
     // Main equilibrium function
     void compute_equilibrium(double& a, double& b);
 
-    inline void compute_equilibrium_UV(double& U, double& V);     // All in one Equilibirum solver function
-
     // Main CFD function
-    void CFD_equilibrium(double T, double V);
+    void CFD_equilibrium(double& e, double& V);
     
     private:
 
@@ -51,6 +34,7 @@ class CESolver {
     Vector J, F, DELTA;   // Newton method vectors
 
     inline void compute_equilibrium_TV(double& T, double& V);     // All in one Equilibirum solver function
+    inline void compute_equilibrium_UV(double& U, double& V);     // All in one Equilibirum solver function
     inline void compute_equilibrium_SV(double& S, double& V);     // All in one Equilibirum solver function
     inline void compute_equilibrium_TP(double& T, double& P);     // All in one Equilibirum solver function
     inline void compute_equilibrium_HP(double& H, double& P);     // All in one Equilibirum solver function
@@ -67,7 +51,7 @@ class CESolver {
     inline bool check_convergence(double* dlnj, double& dln);
     inline double compute_damping(vector<double>& DlnNj, double& dln, double& dlnT);
 
-    inline void compute_derivatives();
+    inline void compute_derivatives(); // Compute derivatives for CFD
 };
 
 #endif

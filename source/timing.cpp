@@ -28,7 +28,7 @@ int main() {
     for (int i = 0; i < N; ++i) {
         U = distU(gen);
         V = distV(gen);
-        CE.compute_equilibrium_UV(U, V); // Solve minimization 
+        CE.compute_equilibrium(U, V); // Solve minimization 
     }
     
     auto end = NOW;

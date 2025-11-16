@@ -19,8 +19,6 @@ constexpr double ATM = 101325.0;
 constexpr double BAR = 100000.0;
 
 constexpr double gcon = 8314.462;       // Universal gas constant: Joules / mol-Kelvin
-constexpr double bcon = 1.380649e-23;   // Boltzmann constant: Joules / Kelvin
-constexpr double acon  = 6.022140e23;   // Avogradro's constant: 1/mol 
 
 typedef std::vector<double> Vector;
 #define NOW std::chrono::high_resolution_clock::now();
