@@ -177,7 +177,7 @@ void CESolver::CFD_equilibrium(double& e, double& rho) {
     }
 
     compute_mixture_properties();   // Compute molecular weights 
-    compute_derivatives();          // Find important derivatives
+    compute_derivativesCFD();          // Find important derivatives
 }
 
 // Universal function caller
@@ -243,6 +243,7 @@ inline void CESolver::compute_equilibrium_TV(double T, double V) {
             gas.X0[j] = gas.N[j];
         }
         compute_mixture_properties();
+        compute_derivatives();
 }
 
 inline void CESolver::compute_equilibrium_UV(double U, double V) {
@@ -333,7 +334,7 @@ inline void CESolver::compute_equilibrium_UV(double U, double V) {
     // }
 
     compute_mixture_properties();
-    compute_derivatives();
+    compute_derivativesCFD();
 
 }
 
@@ -540,13 +541,13 @@ inline double CESolver::compute_damping(vector<double>& DlnNj, double& dlnN, dou
 }
 
 // Compute derivatices for A_rho Jacobian
-inline void CESolver::compute_derivatives() {
+inline void CESolver::compute_derivativesCFD() {
 
     int size = NE + 1;
     vector<double> A(size * size, 0.0), RHS(size, 0.0), x(size, 0.0);
     int offset, idx = NE + gas.HAS_IONS;
 
-    vector<double> anh(NE, 0.0);
+
     vector<double> an(NE, 0.0);
 
     double sum = 0.0, sum1 = 0.0;
@@ -623,6 +624,95 @@ inline void CESolver::compute_derivatives() {
     gas.dtdr = -gas.T / gas.rho * (dlvdlt + dlvdlp) / deno;
     gas.c = sqrt(gas.N_tot * gcon * gas.T * gammas);
 }
+
+// Compute derivatices for A_rho Jacobian
+inline void CESolver::compute_derivatives() {
+
+    int size = NE + 1;
+    vector<double> A(size * size, 0.0), RHS(size, 0.0), x(size, 0.0);
+    int offset, idx = NE + gas.HAS_IONS;
+
+    vector<double> an(NE, 0.0);
+    vector<double> anh(NE, 0.0);
+
+    double sum = 0.0, sum1 = 0.0;
+    double a;
+
+    // ===== Derivatives wrt T =====
+    
+    for (int k = 0; k < NE; ++k) {
+
+        offset = k * size;
+
+        for (int i = 0; i < NE; ++i) {
+            for (int j = 0; j < NS; ++j)
+                A[offset + i] = J[k * J_SIZE + i];
+        }
+
+        for (int j = 0; j < NS; ++j) {
+            a = gas.a[k * NS + j] * gas.N[j];
+            an[k] += a;
+            anh[k] += a * gas.H0_RT[j];
+        }
+
+        A[offset + NE] = an[k];
+        RHS[k] = -anh[k];
+    }
+
+    for (int i = 0; i < NE; ++i) 
+        A[NE * size + i] = an[i];
+
+    for (int j = 0; j < NS; ++j)
+        RHS[size - 1] -= gas.N[j] * gas.H0_RT[j];
+
+
+    LUSolve(A.data(), RHS.data(), x.data(), size, 1);
+
+    double dlndlt = x[size - 1];
+
+    // ===== Compute cp =====
+    gas.cp = 0.0;
+
+    for (int j = 0; j < NS; ++j) 
+        gas.cp += gas.N[j] * gas.CP0_R[j];
+
+
+    for (int i = 0; i < NE; ++i)     
+        gas.cp += anh[i] * x[i];        
+    
+
+    for (int j = 0; j < NS; ++j)
+        gas.cp += gas.N[j] * gas.H0_RT[j] * (dlndlt + gas.H0_RT[j]);
+
+    // ===== Derivatives wrt P =====
+    
+    for (int k = 0; k < NE; ++k) {
+        RHS[k] = an[k];
+    }   
+
+    RHS[size - 1] = 0.0;
+    for (int j = 0; j < NS; ++j)
+        RHS[size - 1] += gas.N[j];
+
+    LUSolve(A.data(), RHS.data(), x.data(), size, 1);
+
+    double dlvdlp = x[size - 1] - 1.0;
+    double dlvdlt = 1.0 + dlndlt;
+
+    gas.p = gas.rho * gas.N_tot * gcon * gas.T;
+    gas.cv = gas.cp + (gas.p * dlvdlt * dlvdlt) / (gas.rho * gas.T * dlvdlp) / gcon;
+    gas.cp *= gcon;
+    gas.cv *= gcon;
+    gas.gamma = gas.cp / gas.cv;
+    double gammas = -gas.gamma / dlvdlp;
+
+    double deno = dlvdlt * dlvdlt + gas.cp * dlvdlp / gas.R;
+
+    gas.dpdr = gas.p / gas.rho * (dlvdlt - gas.cp/gas.R) / deno;
+    gas.dtdr = -gas.T / gas.rho * (dlvdlt + dlvdlp) / deno;
+    gas.c = sqrt(gas.N_tot * gcon * gas.T * gammas);
+}
+
 
 
 

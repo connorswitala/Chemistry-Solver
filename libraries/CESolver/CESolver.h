@@ -51,7 +51,8 @@ class CESolver {
     inline bool check_convergence(double* dlnj, double& dln);
     inline double compute_damping(vector<double>& DlnNj, double& dln, double& dlnT);
 
-    inline void compute_derivatives(); // Compute derivatives for CFD
+    inline void compute_derivatives(); // Compute derivatives for Helmholtz
+    inline void compute_derivativesCFD(); // Compute derivatives for Gibbs
 };
 
 #endif
