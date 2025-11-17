@@ -223,7 +223,8 @@ namespace helm {
         int J_SIZE = gas.J_SIZE;
 
         int idx = NE + gas.HAS_IONS;
-        double sum, eref = 0.0;;
+        double sum;
+        gas.e_ref = 0.0;
 
        // ===== Elemental rows
         for (int k = 0; k < NE; ++k) {
@@ -257,10 +258,11 @@ namespace helm {
         for (int j = 0; j < NS; ++j) 
             F[J_SIZE - 1] += gas.N[j] * gas.U0_RT[j] * gas.mu_RT[j];
 
+        
         for (int j = 0; j < NS; ++j) 
-            eref += gas.N[j] * gas.species[j].href;        
+            gas.e_ref += gas.N[j] * gas.species[j].href;        
 
-        F[J_SIZE - 1] += (gas.uo - eref) / (gcon * gas.T) - gas.up;
+        F[J_SIZE - 1] += (gas.uo - gas.e_ref) / (gcon * gas.T) - gas.up;
     }
 
 

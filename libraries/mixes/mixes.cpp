@@ -171,13 +171,14 @@ mix create_mixture(vector<string> speciesNames, vector<string> elementNames, vec
     gas.X = vector<double>(gas.NS);
     gas.X0 = vector<double>(gas.NS);
 
+    gas.N_tot = 0.0;
     for (int j = 0; j < gas.NS; ++j) {
         if (gas.species[j].q > 0.1) 
             gas.X0[j] = 1e-12;
         else
             gas.X0[j] = 0.1 / gas.NS;
+        gas.N_tot += gas.X0[j];
     }
-
     
     gas.T = 3800.0;         
 
@@ -216,6 +217,17 @@ void print_NASA_mix(const mix& gas) {
              << right << setw(W_DOUBLE) << sp.href
              << right << setw(W_DOUBLE) << sp.hf
              << "\n";
+    }
+
+    for (int j = 0; j < gas.NS; ++j) {
+        cout << "NASA polynomials for " << gas.species[j].name << endl << endl;
+        for (int i = 0; i < 3; ++i) {
+            cout << "Temperature range " << i << endl;
+            for (int k = 0; k < NCOEF; ++k) 
+                cout << scientific << setprecision(10) << gas.species[j].poly[i * NCOEF + k] << "\t";
+            cout << endl;
+        }            
+        cout << endl << endl;
     }
 }
 
@@ -357,7 +369,6 @@ void print_properties(mix& gas) {
 
     cout << endl;
 }
-
 
 mix mixFromString(string& s) {
 

@@ -48,7 +48,7 @@ class CESolver {
     inline void compute_mixture_properties();
 
     // Convergence functions
-    inline bool check_convergence(double* dlnj, double& dln);
+    inline bool check_convergence(double* dlnj, double& dln, double& dlnt);
     inline double compute_damping(vector<double>& DlnNj, double& dln, double& dlnT);
 
     inline void compute_derivatives(); // Compute derivatives for Helmholtz

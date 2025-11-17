@@ -165,8 +165,7 @@ void CESolver::CFD_equilibrium(double& e, double& rho) {
         iteration++;
 
         // Check convergence
-        converged = check_convergence(DlnNj.data(), rlntot);
-        if (fabs(DELTA[J_SIZE - 1]) > 1.0e-5) converged = false;
+        converged = check_convergence(DlnNj.data(), rlntot, DELTA[J_SIZE - 1]);
         if (converged) iteration = maxiter;
     }
 
@@ -231,7 +230,7 @@ inline void CESolver::compute_equilibrium_TV(double T, double V) {
             gas.N[j] *= exp(e * DlnNj[j]);
         }
 
-        converged = check_convergence(DlnNj.data(), dlnn);
+        converged = check_convergence(DlnNj.data(), dlnn, dlnt);
     }
 
         gas.N_tot = 0.0;
@@ -317,7 +316,7 @@ inline void CESolver::compute_equilibrium_UV(double U, double V) {
         iteration++;
 
         // Check convergence
-        converged = check_convergence(DlnNj.data(), dlnn);
+        converged = check_convergence(DlnNj.data(), dlnn, DELTA[J_SIZE - 1]);
         if (fabs(DELTA[J_SIZE - 1]) > 1.0e-5) converged = false;
         if (converged) iteration = maxiter;        
     }
@@ -353,9 +352,10 @@ inline void CESolver::compute_equilibrium_TP(double T, double P) {
     double sum, e, dlnT = 0.0;
     int iteration = 0;
 
+    // Initial conditions
     gas.N_tot = 0.0;
     for (int j = 0; j < NS; ++j) {
-        gas.N[j] = gas.X0[j];
+        gas.N[j] = max(gas.X0[j], 1e-12);
         gas.N_tot += gas.N[j];
     }
 
@@ -385,7 +385,7 @@ inline void CESolver::compute_equilibrium_TP(double T, double P) {
         for (int j = 0; j < NS; ++j)
             gas.N[j] *= exp(e * DlnNj[j]);
 
-        converged = check_convergence(DlnNj.data(), DELTA[NE]);
+        converged = check_convergence(DlnNj.data(), DELTA[NE], dlnT);
     }
 
     for (int j = 0; j < NS; ++j) {
@@ -457,7 +457,7 @@ inline void CESolver::NASA_fits() {
                    + coeff[1] * Ts[1] * Ts[2]
                    + coeff[2]
                    + 0.5 * coeff[3] * Ts[3]
-                   + 0.333 * coeff[4] * Ts[4]
+                   + coeff[4] * Ts[4] / 3.0
                    + 0.25 * coeff[5] * Ts[5]
                    + 0.2 * coeff[6] * Ts[6]
                    + coeff[7] * Ts[1];                  
@@ -468,7 +468,7 @@ inline void CESolver::NASA_fits() {
                    + coeff[2] * Ts[2]
                    + coeff[3] * Ts[3]
                    + 0.5 * coeff[4] * Ts[4]
-                   + 0.333 * coeff[5] * Ts[5]
+                   + coeff[5] * Ts[5] / 3.0
                    + 0.25 * coeff[6] * Ts[6]
                    + coeff[8];
 
@@ -504,7 +504,7 @@ inline void CESolver::compute_mixture_properties() {
 }
 
 // Convergence checker
-inline bool CESolver::check_convergence(double* dlnj, double& dln) {
+inline bool CESolver::check_convergence(double* dlnj, double& dln, double& dlnt) {
 
     double sum = 0.0, check, tol = 0.5e-5;
 
@@ -515,6 +515,9 @@ inline bool CESolver::check_convergence(double* dlnj, double& dln) {
         check = gas.N[j] * fabs(dlnj[j]) / sum;
         if (check > tol) return false;
     }
+
+    if (fabs(dlnt) > 1.0e-5) 
+        return false;
 
     check = gas.N_tot * fabs(dln) / sum;
     if (check > tol) return false;

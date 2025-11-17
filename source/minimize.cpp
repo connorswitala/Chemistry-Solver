@@ -181,7 +181,7 @@ void show_config(const Config& cfg) {
     cout << endl << endl;
 }
 
-void run_sweep(double min, double max, double val2, Config cfg, mix gas, string filename_in) {
+void run_sweep(double min, double max, double val2, Config cfg, mix gas, string filename_in, bool mass) {
 
     string filename = "../user-files/" + filename_in + ".dat";
     ofstream write(filename);
@@ -192,35 +192,29 @@ void run_sweep(double min, double max, double val2, Config cfg, mix gas, string 
 
     // Buffers for BLOCK output
     vector<double> Tvals;
-    vector<vector<double>> Y(gas.NS, vector<double>(0.0));
-    vector<double> dpdr;
-    vector<double> dtdr;
-    vector<double> cv;
-
-    // Compute equilibrium across the sweep
-    auto start = chrono::high_resolution_clock::now();
-
+    vector<double> Y;
     int N = 5000;
 
     CESolver CE(gas, cfg.constraint);
 
     for (int i = 0; i < N; ++i) {
         double v = min + (max - min) / (N - 1) * i;
-        CE.compute_equilibrium(v, val2);
+        if (cfg.constraint == ConstraintType::CFD) {
+            CE.CFD_equilibrium(v, val2);
+        }
+        else 
+            CE.compute_equilibrium(v, val2);
 
         Tvals.push_back(gas.T);
         for (int j = 0; j < gas.NS; ++j) {
-            Y[j].push_back(gas.Y[j]);
+            if (mass == true)
+                Y.push_back(gas.Y[j]);
+            else 
+                Y.push_back(gas.X[j]);
         }
-        dpdr.push_back(gas.dpdr);
-        dtdr.push_back(gas.dtdr);
-        cv.push_back(gas.cv);
         i++;
         if (gas.T > 19000) exit;
     }
-
-    auto end = chrono::high_resolution_clock::now();
-    const double duration = chrono::duration<double>(end - start).count();
 
     // ===== Tecplot ASCII Header (BLOCK format) =====
     // Title
@@ -229,32 +223,24 @@ void run_sweep(double min, double max, double val2, Config cfg, mix gas, string 
     // Variables: T, P, and species mass fractions
     write << "VARIABLES = \"T [K]\"";
     for (int j = 0; j < gas.NS; ++j) {
-        write << ", \"Y(" << gas.species[j].name << ")\"";
+        if (mass == true)
+            write << ", \"Y(" << gas.species[j].name << ")\"";
+        else    
+            write << ", \"X(" << gas.species[j].name << ")\"";
     }
-    write << ", \"dpdr\", \"dtdr\", \"cv\"";
     write << "\n";
 
     // One 1D zone with N points
-    write << "ZONE T=\"TP_Sweep\", I=" << Y[0].size() << ", F=BLOCK\n";
+    write << "ZONE T=\"Sweep\", I=" << Tvals.size() << ", F=POINT\n";
 
-    // Helper lambda to dump a vector with consistent formatting
-    auto dump_vec = [&](const vector<double>& v) {
-        write << scientific << setprecision(8);
-        int count = 0;
-        for (double val : v) {
-            write << val << " ";
-            // keep lines a bit shorter for readability
-            if (++count % 5 == 0) write << "\n";
-        }
-        if (count % 5 != 0) write << "\n";
-    };
 
-    // BLOCK order: all T, then all P, then each Y_j
-    dump_vec(Tvals);
-    for (int j = 0; j < gas.NS; ++j) dump_vec(Y[j]);
-    dump_vec(dpdr);
-    dump_vec(dtdr);
-    dump_vec(cv);
+    for (int i = 0; i < Tvals.size(); ++i) {
+        write << Tvals[i];
+        for (int j = 0; j < gas.NS; ++j) 
+            write << ", " << Y[i * gas.NS + j];
+        write << endl;
+    }
+
 
     write.close();
 
@@ -269,6 +255,8 @@ void run_minimize(const Config& cfg, mix gas) {
     CESolver CE(gas, cfg.constraint);
     double v1, v2, min, max;
     string filename;
+    bool type;
+    int type_in;
 
     switch (cfg.constraint) {
             case::ConstraintType::TP:
@@ -288,9 +276,15 @@ void run_minimize(const Config& cfg, mix gas) {
                         cin >> max;
                         cout << "-- Enter pressure [Pa]: ";
                         cin >> v2;
+                        cout << "-- Enter 1 for plotting mass fraction, 0 for molar fractions ";
+                        cin >> type_in;
+                        if (type_in == 1)
+                            type = true;
+                        else 
+                            type = false;
                         cout << "-- Enter filename (.dat is already appended, will be saved to the 'user-files' directory): ";
                         cin >> filename;
-                        run_sweep(min, max, v2, cfg, gas, filename);
+                        run_sweep(min, max, v2, cfg, gas, filename, type);
                     break;
                 }
             break;
@@ -311,9 +305,15 @@ void run_minimize(const Config& cfg, mix gas) {
                         cin >> max;
                         cout << "-- Enter specific volume [m^3/kg]: ";
                         cin >> v2;
+                        cout << "-- Enter 1 for plotting mass fraction, 0 for molar fractions ";
+                        cin >> type_in;
+                        if (type_in == 1)
+                            type = true;
+                        else 
+                            type = false;
                         cout << "-- Enter filename (.dat is already appended, will be saved to the 'user-files' directory): ";
                         cin >> filename;
-                        run_sweep(min, max, v2, cfg, gas, filename);
+                        run_sweep(min, max, v2, cfg, gas, filename, type);
                     break;
                 }
             break;
@@ -334,9 +334,15 @@ void run_minimize(const Config& cfg, mix gas) {
                         cin >> max;
                         cout << "-- Enter specific volume [m^3/kg]: ";
                         cin >> v2;
+                        cout << "-- Enter 1 for plotting mass fraction, 0 for molar fractions ";
+                        cin >> type_in;
+                        if (type_in == 1)
+                            type = true;
+                        else 
+                            type = false;
                         cout << "-- Enter filename (.dat is already appended, will be saved to the 'user-files' directory): ";
                         cin >> filename;
-                        run_sweep(min, max, v2, cfg, gas, filename);
+                        run_sweep(min, max, v2, cfg, gas, filename, type);
                     break;
                 }
             break;
@@ -357,9 +363,15 @@ void run_minimize(const Config& cfg, mix gas) {
                         cin >> max;
                         cout << "-- Enter density [kg/m^3]: ";
                         cin >> v2;
+                        cout << "-- Enter 1 for plotting mass fraction, 0 for molar fractions ";
+                        cin >> type_in;
+                        if (type_in == 1)
+                            type = true;
+                        else 
+                            type = false;
                         cout << "-- Enter filename (.dat is already appended, will be saved to the 'user-files' directory): ";
                         cin >> filename;
-                        run_sweep(min, max, v2, cfg, gas, filename);
+                        run_sweep(min, max, v2, cfg, gas, filename, type);
                     break;
                 }
             break;
@@ -420,6 +432,7 @@ int main() {
     cout << endl << endl << "Commands:\n";
     cout << "  help  - view options \n";
     cout << "  show  - show current configuration\n";
+    cout << "  printNASA  - print NASA thermodynamic data for current mix\n";
     cout << "  run   - run minimization\n";
     cout << "  quit  - exit\n\n";
 
@@ -442,6 +455,9 @@ int main() {
         }
         else if (line == "help") {
             show_options();
+        }
+        else if (line == "printNASA") {
+            print_NASA_mix(gas);
         }
         else if (line.rfind("--", 0) == 0) {
             // option line like --mode=...
