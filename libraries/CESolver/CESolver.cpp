@@ -181,13 +181,13 @@ void CESolver::CFD_equilibrium(double& e, double& rho) {
 }
 
 // Universal function caller
-void CESolver::compute_equilibrium(double& a, double& b) {
+void CESolver::compute_equilibrium(double a, double b) {
     (this->*equilibrium)(a, b);
 }
 
 
 // ===== Mostly the same as CFD_equilibrium(), not commented =====
-inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
+inline void CESolver::compute_equilibrium_TV(double T, double V) {
 
     bool converged = false;
     static Vector DlnNj(NS);
@@ -245,7 +245,7 @@ inline void CESolver::compute_equilibrium_TV(double& T, double& V) {
         compute_mixture_properties();
 }
 
-inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
+inline void CESolver::compute_equilibrium_UV(double U, double V) {
 
     bool converged = false;
 
@@ -337,11 +337,11 @@ inline void CESolver::compute_equilibrium_UV(double& U, double& V) {
 
 }
 
-inline void CESolver::compute_equilibrium_SV(double& S, double& V) {
+inline void CESolver::compute_equilibrium_SV(double S, double V) {
     cout << "Not made yet" << endl;
 }
 
-inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
+inline void CESolver::compute_equilibrium_TP(double T, double P) {
 
     bool converged = false;
     static Vector DlnNj(NS);
@@ -403,11 +403,11 @@ inline void CESolver::compute_equilibrium_TP(double& T, double& P) {
     // }    
 }
 
-inline void CESolver::compute_equilibrium_HP(double& H, double& P) {
+inline void CESolver::compute_equilibrium_HP(double H, double P) {
     cout << "Not made yet" << endl;
 }
 
-inline void CESolver::compute_equilibrium_SP(double& S, double& P) {
+inline void CESolver::compute_equilibrium_SP(double S, double P) {
     cout << "Not made yet" << endl;
 }
 

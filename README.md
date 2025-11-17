@@ -4,17 +4,17 @@ This repository is for solving chemical equilibrium thermodynamics. It is curren
 
 # Programs
 
-In the [bin](./bin/) directory, there are three programs ready to be run after you build. The first is an example program that has everything defined for you to run it and see the minimization results. You can toy with options to understand how to use correct `enum class` types, or `ConstraintTypes::` (both defined below).
+In the [bin](./bin/) directory, there are three programs ready to be run after you build. The first is an example program that has everything defined for you to run it and see the minimization results. You can toy with options at the source [file](./source/example.cpp) to understand how to use correct `enum class` types, or `ConstraintTypes::` (both defined below) and access results.
 
-The second program is the command-line driven code that lets you choose options and set mixtures for the chemical equilibrium process. The program has a 'help' command that will tell you what you need to run, but an brief overview is given here. When you start the program, it will give you some options right off the bat. In order to run minimization, all fields need to filled in that appear when you type `show`. Two fields are already initialized by default. 
+The second program is the command-line driven code that lets you choose options and set mixtures for the chemical equilibrium process. The program has a 'help' command that will tell you what you need to run. An overview is given here as well. When you start the program, it will give you some options right off the bat. In order to run minimization, all fields need to filled in that appear when you type `show`. Two fields are already initialized by default. 
 
-The `--mode` option tells the program which mode it is running in. By inputting `--mode=sweep` you can change the programs from a standalone minimization given a single value for T and P, to a verson that sweeps through an user-input min and max temperature value and then plots the results to a user-named file.
+The `--mode` option tells the program which mode it is running in. By inputting `--mode= sweep` you can change the program from a standalone minimization given a single values for minimization parameters, to a version that sweeps through an user-input min and max energy value and then plots the results to a user-named file.
 
 The `--constraint` option tells the programs with minimization procedure to use. TP, TV, UV, CFD are the current ones available. It needs to be in caps when input as well. For example`--constraint=TP`.
 
-The `--species` option tells the program which species you want to include in the minimization process. You can list your own with comma (and space) separated variables as such: `--species=N2, O2, NO, N, O`. If you choose to build species this way, you will need to specify a couple more things like `--elements` and `-Y`. If instead you use an already created mixture (available ones are air5, air7, air11, air13, mars8), you can do so with `--species=air11`, for example. This will fill in the `--elements` and `-Y` flags for you as well. You can always double check what needs to be filled in with the `show` command.
+The `--species` option tells the program which species you want to include in the minimization process. You can list your own with comma separated variables as such: `--species= N2, O2, NO, N, O`. If you choose to build species this way, you will need to specify a couple more things like `--elements` and `--Y`. If instead you use an already created mixture (available ones are air5, air7, air11, air13, mars8), you can do so with `--species= air11`. This will fill in the `--elements` and `--Y` flags for you as well. You can always double check what needs to be filled in with the `show` command.
 
-If you do need to specifiy elements and mass fractions, you can do so with `--elements=N, O` and also `-Y=0.7572, 0.2428`. Just make sure that the order that you input the mass fractions lines up with the elemental ordering.
+If you do need to specifiy elements and mass fractions, you can do so with `--elements= N, O` and also `-Y= 0.7572, 0.2428`. Just make sure that the order that you input the mass fractions lines up with the elemental ordering.
 
 When the configuration input has been filled in, `run` will run the program for you. You will still need to follow command line prompts for specifying filenames, sweeping values, etc.
 
@@ -34,7 +34,7 @@ Currently, the minimization methods that are completed are:
 
 ### Composition
 
-Currently, there are five air mixtures and one Martian atmosphere available for easy access. These are accesible through the the use of the enum class `GasType::` and are created using the function `common_mixture()`. The five compositions included are:
+Currently, there are five air mixtures and one Martian atmosphere available for easy access. These are accesible through the the use of the enum class `GasType::` and are created using the function `common_mixture()`. The six compositions included are:
 
 - `GasType::AIR5` Contains N2, O2, NO, N, and O.
 - `GasType::AIR7` Contains N2, O2, NO, N, O, NO+, e-.
@@ -46,8 +46,7 @@ Currently, there are five air mixtures and one Martian atmosphere available for 
 Here is an example of creating a common air mixture:
 
 ```
-GasType g = GasType::AIR5; 
-mix gas = common_mixture(g);
+mix gas = common_mixture(GasType::AIR5);
 ```
 
 This creates an instance of type `mix` named `gas` for you to access. It is also passed into the equilibrium solver where its values are used / manipulated during the minimization process. 
@@ -76,13 +75,13 @@ This code is set up to minimize either Gibbs or Helmholtz energies using the `CE
 
 The `CESolver` constructor function automatically chooses which energy to minimize when it receives the constraint type. The constructor function creates a pointer to the correct minimization function and is called with `CESolver CE(gas, constraint)`. Here, `gas` is the gas mix created above, and `constraint` is the `ConstraintType` you want to use. The minimization function pointer is used in the public member function of `CESolver` named `compute_equilibrium()`. This function takes in two arguments that are alligned with the contraint type, e.g. if you have chosen `ConstraintType::TP`, then calling `compute_equilibrium(1000, 101325)` will assume that temperature T = 1000 K, and pressure P = 101325 Pa. If you set 'constraint' = `ConstraintType::UV`, then `compute_equilibrium(1e6, 0.1)` would set internal energy (U) to 1e6 J/kg , and volume (V) to 0.1 m^3/kg.
 
-Another constraint type is used when this code is utilized for plugging in to CFD code. This is `ConstraintType::CFD` which does not create a pointer to a certain function. It forced you to call the CFD version `CFD_equilibrium(e, rho)` which minimizes Helmholtz energy hold internal energy and density constant.
+Another constraint type is used when this code is utilized for plugging in to CFD code. This is `ConstraintType::CFD` which does not create a pointer to a certain function. It forces you to call the CFD version `CFD_equilibrium(e, rho)` which minimizes Helmholtz energy holding internal energy and density constant.
 
 ### Access to results.
 
 There are two ways to access the results of the minimization.
 
-Firstly, you can access each variable of the `mix` instance that you created in your code. Assume that, for this README, it is created as `mix gas` as defined above. All results are stored in this variable, so you can use or print all of its member variables. Everything that is available to you is found in the header file 'thermoObjs.h'. You can access the variables you want by use of `gas.<variable name>`. If you want temperature printed, you would write
+Firstly, you can access each variable of the `mix` instance that you created in your code. Assume that, for this README, it is created as `mix gas` as defined above. All results are stored in this variable, so you can use or print all of its member variables. Everything that is available to you is found in the header file [here](./libraries/includes/thermoObjs.h). You can access the variables you want by use of `gas.<variable name>`. If you want temperature printed, you would write
 
 ```
 cout << gas.T << endl;
@@ -102,11 +101,7 @@ Secondly, if you only care about the results without putting it in other code, y
 print_properties(gas);
 ```
 
-This function will display every thermodynamic quantity you may need in `mix gas`. The quantities that are printed in this function are denoted in the structure definition [here](./libraries/includes/thermoObjs.h).
-
-## Sample Code
-
-Code is already setup to test the functionality of this repository. To check it out, open [minimize.cpp](./source/).
+This function will display every thermodynamic quantity you may need in `mix gas`.
 
 ## Documentation
 

@@ -122,13 +122,8 @@ void handle_option_line(const string& line, Config& cfg, mix& gas) {
             cfg.species.clear();
             cfg.elements = gas.elements;
             cfg.initial = gas.b;
-            cfg.species.reserve(3 + gas.NS);            
-            cfg.species.push_back("Using predefined mixture");
-            cfg.species.push_back(value);
-            cfg.species.push_back("which contains:");
+            cfg.species = gas.speciesnames;
 
-            for (int j = 0; j < gas.NS; ++j)
-                cfg.species.push_back(gas.speciesnames[j]);
             cout << endl;
 
         } else {
@@ -185,7 +180,6 @@ void show_config(const Config& cfg) {
     }
     cout << endl << endl;
 }
-
 
 void run_sweep(double min, double max, double val2, Config cfg, mix gas, string filename_in) {
 
@@ -373,20 +367,47 @@ void run_minimize(const Config& cfg, mix gas) {
 }
 
 void show_options() {
-    cout << "  All lists must include a comma and a space after." << endl << endl;
-    cout << "  --species  : Write a list of species to include (e.g. --species=N2, O2, NO, N, O) or use a predefined mix [air5, air7, air11, air13, mars8, e.g. --species=air11]." << endl << endl;
-    cout << "  --elements  : Write a list of the elements in your species list (e.g. --elements= N, O). Not used if using predefined mixture." << endl << endl;
-        cout << "  --Y  : Set the mass fractions of elements in the same order you did/will for --elements (e.g. --Y=0.7572, 0.2428). Not used if using predefined mixture." << endl << endl;
-    cout << "  --constraint  : In caps, write the constraint you want to minimize with (available are: TP, TV, UV, CFD)." << endl << endl;
-    cout << "  --mode  : Mode you want to run in. Automatically assumes you want to run one case with a single set of variables. If you want to sweep over a range of values to plot them, use --mode=sweep" << endl << endl;
+    using std::cout;
+    using std::endl;
+
+    cout << "===============================================================================\n";
+    cout << "  Chemical Equilibrium Solver - Command Line Options\n";
+    cout << "===============================================================================\n";
+    cout << "  General rules:\n";
+    cout << "    * All options must be provided as '--option='\n";
+    cout << "    * Lists use commas; spaces are optional.\n";
+    cout << "      Example: --species=N2,O2,N  is the same as  --species= N2, O2, N\n";
+    cout << "      Use species available in the NASA thermo.inp file. \n";
+    cout << "      Species, elements, and Y lists are not checked, please make sure there are no errors.\n";
+    cout << "-------------------------------------------------------------------------------\n\n";
+
+    cout << "  Mixture definition\n";
+    cout << "    --species=LIST       List of species to include\n";
+    cout << "                         e.g. --species=N2,O2,NO,N,O\n";
+    cout << "                         or a predefined mixture name:\n";
+    cout << "                         [air5, air7, air11, air13, mars8]\n";
+    cout << "                         e.g. --species= air11\n\n";
+
+    cout << "    --elements=LIST      List of elements in the species list\n";
+    cout << "                         e.g. --elements= N,O\n";
+    cout << "                         (ignored when using a predefined mixture)\n\n";
+
+    cout << "    --Y=LIST             Element mass fractions, in the same order\n";
+    cout << "                         as given in --elements\n";
+    cout << "                         e.g. --Y= 0.7572,0.2428\n";
+    cout << "                         (ignored when using a predefined mixture)\n\n";
+
+    cout << "    --constraint=TYPE    Energy constraint to minimize with respect to\n";
+    cout << "                         Available: TP, TV, UV, CFD\n";
+    cout << "                         e.g. --constraint= TP\n\n";
+
+    cout << "    --mode=MODE          Run mode for the solver\n";
+    cout << "                         Default (omit or anything else): single case\n";
+    cout << "                         Use 'sweep' to run over a range for plotting\n";
+    cout << "                         e.g. --mode= sweep\n";
+    cout << "===============================================================================\n";
 }
 
-
-vector<double> get_variables (Config cfg) {
-
-
-
-}
 
 
 int main() {
@@ -395,10 +416,10 @@ int main() {
     mix gas;
 
     cout << endl;
-    cout << "=====: Interactive University of Minnesota chemical equilibrium solver shell :=====\n";
+    cout << "=====: Interactive University of Minnesota chemical equilibrium solver :=====\n";
     cout << endl << endl << "Commands:\n";
     cout << "  help  - view options \n";
-    cout << "  show  - show current config\n";
+    cout << "  show  - show current configuration\n";
     cout << "  run   - run minimization\n";
     cout << "  quit  - exit\n\n";
 

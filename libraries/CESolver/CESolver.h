@@ -16,7 +16,7 @@ class CESolver {
     CESolver(mix& gas_in, ConstraintType contrainttype); 
 
     // Main equilibrium function
-    void compute_equilibrium(double& a, double& b);
+    void compute_equilibrium(double a, double b);
 
     // Main CFD function
     void CFD_equilibrium(double& e, double& V);
@@ -24,7 +24,7 @@ class CESolver {
     private:
 
     // Used for compute_equilibrium function
-    using FuncPtr = void (CESolver::*)(double&, double&);
+    using FuncPtr = void (CESolver::*)(double, double);
     FuncPtr equilibrium = nullptr;
 
     int T_flag;     // Flags which set of NASA coefficients to use.
@@ -33,12 +33,12 @@ class CESolver {
 
     Vector J, F, DELTA;   // Newton method vectors
 
-    inline void compute_equilibrium_TV(double& T, double& V);     // All in one Equilibirum solver function
-    inline void compute_equilibrium_UV(double& U, double& V);     // All in one Equilibirum solver function
-    inline void compute_equilibrium_SV(double& S, double& V);     // All in one Equilibirum solver function
-    inline void compute_equilibrium_TP(double& T, double& P);     // All in one Equilibirum solver function
-    inline void compute_equilibrium_HP(double& H, double& P);     // All in one Equilibirum solver function
-    inline void compute_equilibrium_SP(double& S, double& P);     // All in one Equilibirum solver function
+    inline void compute_equilibrium_TV(double T, double V);     // All in one Equilibirum solver function
+    inline void compute_equilibrium_UV(double U, double V);     // All in one Equilibirum solver function
+    inline void compute_equilibrium_SV(double S, double V);     // All in one Equilibirum solver function
+    inline void compute_equilibrium_TP(double T, double P);     // All in one Equilibirum solver function
+    inline void compute_equilibrium_HP(double H, double P);     // All in one Equilibirum solver function
+    inline void compute_equilibrium_SP(double S, double P);     // All in one Equilibirum solver function
 
 
     inline void findTRange();               // Finds Temperature range to use proper NASA coeff.
