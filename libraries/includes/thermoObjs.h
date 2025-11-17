@@ -33,9 +33,9 @@ struct mix {
     Vector Y, X;                            // Mass and mole fractions.                
     double dpdr, dtdr;                      // Dericatives wrt rho holding e const     
     //                                                                                 
-    // ==================================================================================
+    // =================================================================================
 
-    // ==================== NASA data and solver related information ====================
+    // ==================== NASA data and solver related information ===================
     Vector elemental_mw;                        // Molecular weight of elements
     Vector H0_RT, S0_R, mu0_RT, CP0_R, U0_RT;   // NASA polynomial curve fit data
     double up, hp, sp, uo, ho, so;              // Used for specification of enthalpy, internal energy, and entropy.

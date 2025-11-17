@@ -19,9 +19,7 @@ int main() {
 
     CESolver CE(gas, constraint);   // Construct CESolver class for minimization.
 
-    double T, T_base = 300.0;
-    double U = 8e5, U_base = 5e5;
-    double P = 101325.0, V = 1.0 / 1.225;
+    double T, U, P = 101325.0, V = 1.0 / 1.225;
 
     int N = 1000000;
     auto start = NOW;
@@ -33,8 +31,6 @@ int main() {
     
     auto end = NOW;
     auto duration = chrono::duration<double>(end - start).count();
-
-    // CE.print_properties();
 
     cout << endl << "-- Total time: " << setprecision(8) << duration << endl << "-- Time per call = " << fixed << setprecision(8) << duration / N << " s." << endl << endl;
 
