@@ -3,3 +3,5 @@
 *.dat
 *.o
 *.png
+build/
+misc/bin
