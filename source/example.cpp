@@ -8,7 +8,7 @@ int main() {
 
     // ====== Create gas mix using enum class for common mixes
 
-    mix gas = common_mixture(GasType::AIR5);                        
+    mix gas = common_mixture(GasType::AIR11);                        
 
 
     // ======= Create user-defined mix ======
@@ -23,7 +23,7 @@ int main() {
     CESolver CE(gas, constraint);                       // Construct CESolver class for minimization.
 
 
-    string filename = "../user-files/plot.dat";
+    string filename = "../user-files/air11_moles.dat";
     ofstream write(filename);
     if (!write) {
         cerr << "Failed to open " << filename << " for writing.\n";
@@ -48,9 +48,9 @@ int main() {
     // One 1D zone with N points
     write << "ZONE T=\"Sweep\", I=" << N << ", F=POINT\n";
 
-    for (int i = 0; i < N; ++i) {
+    for (int i =  0; i < N; ++i) {
         T = 300.0 + (20000.0 - 300.0) / (N - 1) * double(i);
-        CE.compute_equilibrium(T, 101325.0);
+        CE.compute_equilibrium(T, 101325.0); 
 
         write << T;
         for (int j = 0; j < gas.NS; ++j)

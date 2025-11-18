@@ -45,7 +45,7 @@ struct mix {
     Vector a, b;                                // Stoichiometric coefficients / number of moles of element i 
     Vector N, mu_RT;                            // Current solution for number of moles as well as chemical potential.
     int J_SIZE;                                 // Size of solution vector.
-    bool HAS_IONS, NEEDS_T;                     // Booleans used in solver, stores here for passing to function.
+    bool HAS_IONS, NEEDS_T, COND;               // Booleans used in solver, stores here for passing to function.
 };
 
 inline ConstraintType constraintFromString(string& s) {

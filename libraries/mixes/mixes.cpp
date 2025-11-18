@@ -174,7 +174,7 @@ mix create_mixture(vector<string> speciesNames, vector<string> elementNames, vec
     gas.N_tot = 0.0;
     for (int j = 0; j < gas.NS; ++j) {
         if (gas.species[j].q > 0.1) 
-            gas.X0[j] = 1e-12;
+            gas.X0[j] = 1e-30;
         else
             gas.X0[j] = 0.1 / gas.NS;
         gas.N_tot += gas.X0[j];

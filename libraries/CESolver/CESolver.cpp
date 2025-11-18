@@ -6,6 +6,7 @@ CESolver::CESolver(mix& gas_in, ConstraintType constrainttype) : gas(gas_in) {
     // For terminial output
     string energy;
     string contraint;
+    string cond;
 
     // Create Newton solver Matrix/Vector sizes and set booleans/function pointers.
     switch (constrainttype) {
@@ -351,17 +352,18 @@ inline void CESolver::compute_equilibrium_TP(double T, double P) {
 
     double sum, e, dlnT = 0.0;
     int iteration = 0;
+    int max_iter = 600;
 
     // Initial conditions
     gas.N_tot = 0.0;
     for (int j = 0; j < NS; ++j) {
-        gas.N[j] = max(gas.X0[j], 1e-12);
+        gas.N[j] = max(gas.X0[j], 1e-30);
         gas.N_tot += gas.N[j];
     }
 
     NASA_fits();
 
-    while (!converged) {
+    while (iteration < max_iter) {
 
         gibbs::compute_mu(gas);
         gibbs::form_elemental(J.data(), F.data(), gas);
@@ -386,6 +388,8 @@ inline void CESolver::compute_equilibrium_TP(double T, double P) {
             gas.N[j] *= exp(e * DlnNj[j]);
 
         converged = check_convergence(DlnNj.data(), DELTA[NE], dlnT);
+        if (converged) iteration = max_iter;
+        iteration++;
     }
 
     for (int j = 0; j < NS; ++j) {
@@ -506,7 +510,7 @@ inline void CESolver::compute_mixture_properties() {
 // Convergence checker
 inline bool CESolver::check_convergence(double* dlnj, double& dln, double& dlnt) {
 
-    double sum = 0.0, check, tol = 0.5e-5;
+    double sum = 0.0, check, tol = 0.5e-16;
 
     for (int j = 0; j < NS; ++j)
         sum += gas.N[j];
@@ -516,7 +520,7 @@ inline bool CESolver::check_convergence(double* dlnj, double& dln, double& dlnt)
         if (check > tol) return false;
     }
 
-    if (fabs(dlnt) > 1.0e-5) 
+    if (fabs(dlnt) > 1.0e-16) 
         return false;
 
     check = gas.N_tot * fabs(dln) / sum;
