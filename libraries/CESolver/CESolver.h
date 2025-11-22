@@ -40,9 +40,6 @@ class CESolver {
     inline void compute_equilibrium_HP(double H, double P);     // All in one Equilibirum solver function
     inline void compute_equilibrium_SP(double S, double P);     // All in one Equilibirum solver function
 
-
-    inline void findTRange();               // Finds Temperature range to use proper NASA coeff.
-    inline array<double, 7> temp_base();    // Calculates Temperature functions for NASA poly.
     inline void NASA_fits();                // Calculates H0, S0, H0, and MU0.
 
     inline void compute_mixture_properties();

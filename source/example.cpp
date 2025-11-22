@@ -19,8 +19,7 @@ int main() {
 
     // mix gas = create_mixture(species, elements, initial);
 
-    ConstraintType constraint = ConstraintType::TP;     // Set minimization procedure (temperature, pressure held constant in this case).
-    CESolver CE(gas, constraint);                       // Construct CESolver class for minimization.
+    CESolver CE(gas, ConstraintType::TP);                       // Construct CESolver class for minimization, using TP constraint.
 
     CE.compute_equilibrium(5000.0, 101325.0);  // Solve for equilibrium at T = 5000.0 K, and P = 101325.0 Pa
 

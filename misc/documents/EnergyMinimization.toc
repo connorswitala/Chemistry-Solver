@@ -1,29 +1,41 @@
-\contentsline {section}{\nonumberline Nomenclature}{2}{section*.2}%
-\contentsline {section}{\numberline {1}Minimization Procedures}{3}{section.1}%
-\contentsline {subsection}{\numberline {1.1}Constraints for Both Procedures}{3}{subsection.1.1}%
-\contentsline {subsection}{\numberline {1.2}The Lagrangian}{3}{subsection.1.2}%
-\contentsline {subsection}{\numberline {1.3}Newton-Raphson Iterative Method}{4}{subsection.1.3}%
-\contentsline {subsection}{\numberline {1.4}Gibbs Minimization}{4}{subsection.1.4}%
-\contentsline {subsubsection}{\numberline {1.4.1}Constraints}{5}{subsubsection.1.4.1}%
-\contentsline {subsubsection}{\numberline {1.4.2}Derivatives}{6}{subsubsection.1.4.2}%
-\contentsline {subsubsection}{\numberline {1.4.3}Derivatives of $f_1$}{7}{subsubsection.1.4.3}%
-\contentsline {subsubsection}{\numberline {1.4.4}Derivatives of $f_2$}{8}{subsubsection.1.4.4}%
-\contentsline {subsubsection}{\numberline {1.4.5}Derivatives of $f_3$}{8}{subsubsection.1.4.5}%
-\contentsline {subsubsection}{\numberline {1.4.6}Derivatives of $f_4$}{8}{subsubsection.1.4.6}%
-\contentsline {subsubsection}{\numberline {1.4.7}Derivatives of $f_5$}{9}{subsubsection.1.4.7}%
-\contentsline {subsubsection}{\numberline {1.4.8}Derivatives of $f_6$}{9}{subsubsection.1.4.8}%
-\contentsline {subsubsection}{\numberline {1.4.9}Reduced Gibbs Equations}{10}{subsubsection.1.4.9}%
-\contentsline {subsection}{\numberline {1.5}Helmholtz Minimization}{12}{subsection.1.5}%
-\contentsline {subsubsection}{\numberline {1.5.1}Constraints}{12}{subsubsection.1.5.1}%
-\contentsline {subsubsection}{\numberline {1.5.2}Derivatives}{13}{subsubsection.1.5.2}%
-\contentsline {subsubsection}{\numberline {1.5.3}Derivatives for $f_1$}{14}{subsubsection.1.5.3}%
-\contentsline {subsubsection}{\numberline {1.5.4}Derivatives for $f_2$}{14}{subsubsection.1.5.4}%
-\contentsline {subsubsection}{\numberline {1.5.5}Derivatives for $f_3$}{14}{subsubsection.1.5.5}%
-\contentsline {subsubsection}{\numberline {1.5.6}Derivatives for $f_4$}{15}{subsubsection.1.5.6}%
-\contentsline {subsubsection}{\numberline {1.5.7}Derivatives for $f_5$}{15}{subsubsection.1.5.7}%
-\contentsline {subsubsection}{\numberline {1.5.8}Reduced Helmholtz Equations}{16}{subsubsection.1.5.8}%
-\contentsline {subsection}{\numberline {1.6}Useful Relationships}{18}{subsection.1.6}%
-\contentsline {section}{\numberline {2}Standard State Chemical Potential Derivatives}{18}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Gibbs Derivative}{18}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Helmholtz Derivative}{19}{subsection.2.2}%
-\contentsline {section}{\numberline {3}Code description}{20}{section.3}%
+\contentsline {section}{\nonumberline Nomenclature}{3}{section*.2}%
+\contentsline {section}{\numberline {1}Minimization Procedures}{4}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Constraints for Both Procedures}{4}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}The Lagrangian}{4}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Newton-Raphson Iterative Method}{5}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Gibbs Minimization}{5}{subsection.1.4}%
+\contentsline {subsubsection}{\numberline {1.4.1}Constraints}{6}{subsubsection.1.4.1}%
+\contentsline {subsubsection}{\numberline {1.4.2}Derivatives}{7}{subsubsection.1.4.2}%
+\contentsline {subsubsection}{\numberline {1.4.3}Derivatives of $f_1$}{8}{subsubsection.1.4.3}%
+\contentsline {subsubsection}{\numberline {1.4.4}Derivatives of $f_2$}{9}{subsubsection.1.4.4}%
+\contentsline {subsubsection}{\numberline {1.4.5}Derivatives of $f_3$}{9}{subsubsection.1.4.5}%
+\contentsline {subsubsection}{\numberline {1.4.6}Derivatives of $f_4$}{9}{subsubsection.1.4.6}%
+\contentsline {subsubsection}{\numberline {1.4.7}Derivatives of $f_5$}{10}{subsubsection.1.4.7}%
+\contentsline {subsubsection}{\numberline {1.4.8}Derivatives of $f_6$}{10}{subsubsection.1.4.8}%
+\contentsline {subsubsection}{\numberline {1.4.9}Reduced Gibbs Equations}{11}{subsubsection.1.4.9}%
+\contentsline {subsection}{\numberline {1.5}Helmholtz Minimization}{13}{subsection.1.5}%
+\contentsline {subsubsection}{\numberline {1.5.1}Constraints}{13}{subsubsection.1.5.1}%
+\contentsline {subsubsection}{\numberline {1.5.2}Derivatives}{14}{subsubsection.1.5.2}%
+\contentsline {subsubsection}{\numberline {1.5.3}Derivatives for $f_1$}{15}{subsubsection.1.5.3}%
+\contentsline {subsubsection}{\numberline {1.5.4}Derivatives for $f_2$}{15}{subsubsection.1.5.4}%
+\contentsline {subsubsection}{\numberline {1.5.5}Derivatives for $f_3$}{15}{subsubsection.1.5.5}%
+\contentsline {subsubsection}{\numberline {1.5.6}Derivatives for $f_4$}{16}{subsubsection.1.5.6}%
+\contentsline {subsubsection}{\numberline {1.5.7}Derivatives for $f_5$}{16}{subsubsection.1.5.7}%
+\contentsline {subsubsection}{\numberline {1.5.8}Reduced Helmholtz Equations}{17}{subsubsection.1.5.8}%
+\contentsline {subsection}{\numberline {1.6}Useful Relationships}{19}{subsection.1.6}%
+\contentsline {section}{\numberline {2}Standard State Chemical Potential Derivatives}{19}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Gibbs Derivative}{19}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Helmholtz Derivative}{20}{subsection.2.2}%
+\contentsline {section}{\numberline {3}Quick code overview}{21}{section.3}%
+\contentsline {section}{\numberline {4}Code specifics}{22}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Overview}{22}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Function details}{25}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Constructor function}{25}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}compute\_equilibriumXY() functions}{25}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}NASA\_fits()}{26}{subsubsection.4.2.3}%
+\contentsline {subsubsection}{\numberline {4.2.4}Namespace functions}{26}{subsubsection.4.2.4}%
+\contentsline {subsubsection}{\numberline {4.2.5}compute\_mixture\_properties()}{26}{subsubsection.4.2.5}%
+\contentsline {subsubsection}{\numberline {4.2.6}compute\_derivatives()}{26}{subsubsection.4.2.6}%
+\contentsline {subsubsection}{\numberline {4.2.7}compute\_derivativesCFD()}{26}{subsubsection.4.2.7}%
+\contentsline {subsubsection}{\numberline {4.2.8}check\_convergence()}{26}{subsubsection.4.2.8}%
+\contentsline {subsubsection}{\numberline {4.2.9}compute\_damping()}{26}{subsubsection.4.2.9}%

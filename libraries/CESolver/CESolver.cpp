@@ -416,9 +416,11 @@ inline void CESolver::compute_equilibrium_SP(double S, double P) {
     cout << "Not made yet" << endl;
 }
 
-// ===== Helper functions =====
 
-inline void CESolver::findTRange() {
+inline void CESolver::NASA_fits() {
+
+    // Get temperature range
+
     if      (gas.T >= 200.0   && gas.T <= 1000.0)   T_flag = 0;
     else if (gas.T >  1000.0  && gas.T <= 6000.0)   T_flag = 1;
     else if (gas.T >  6000.0  && gas.T <= 20000.0)  T_flag = 2;
@@ -426,10 +428,9 @@ inline void CESolver::findTRange() {
         T_flag = -1;
         cout << "T = " << gas.T << ", outside polynomial range" << endl;
     }
-}
 
-inline array<double, 7> CESolver::temp_base() {
 
+    // Produce Temperature terms
     double T = gas.T;
     array<double, 7> Ts;
     double Ti = 1/T;
@@ -441,15 +442,6 @@ inline array<double, 7> CESolver::temp_base() {
     Ts[4] = Ts[3] * T;  // T^2
     Ts[5] = Ts[4] * T;  // T^3
     Ts[6] = Ts[5] * T;  // T^4
-
-    return Ts;
-}
-
-inline void CESolver::NASA_fits() {
-
-
-    findTRange();                   // Find the temperature range to use for NASA Polynomials
-    const auto Ts = temp_base();    // Calculate temperature variables.
 
     for (int j = 0; j < NS; ++j) {
 

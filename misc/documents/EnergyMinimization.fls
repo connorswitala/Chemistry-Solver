@@ -1179,8 +1179,8 @@ INPUT /project/swita014/projects/Projects/my-codes/Chemistry-Solver/misc/documen
 INPUT /usr/share/texmf/fonts/tfm/public/cm/cmbx10.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm
-OUTPUT /project/swita014/projects/Projects/my-codes/Chemistry-Solver/misc/documents/EnergyMinimization.toc
 INPUT /var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map
+OUTPUT /project/swita014/projects/Projects/my-codes/Chemistry-Solver/misc/documents/EnergyMinimization.toc
 INPUT /project/swita014/projects/Projects/my-codes/Chemistry-Solver/misc/documents/EnergyMinimization.nls
 INPUT /project/swita014/projects/Projects/my-codes/Chemistry-Solver/misc/documents/EnergyMinimization.nls
 INPUT /project/swita014/projects/Projects/my-codes/Chemistry-Solver/misc/documents/EnergyMinimization.nls

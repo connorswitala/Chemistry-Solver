@@ -375,7 +375,7 @@ Substitution into equation [\ref{Gpii}] - [\ref{GdlnTS}] yields:
 \begin{multline}
     \textcolor{red}{\sum_{i=1}^\text{NE} \left[ \sum_{j=1}^\text{NS} a_{kj} a_{ij} \mathcal{N}_j \right] \pi_i + \left[ \sum_{j=1}^\text{NS} a_{kj} \mathcal{N}_j \right] \Delta \ln \mathcal{N}} \textcolor{blue}{ + \left[ \sum_{j=1}^\text{NS} a_{kj} q_j \mathcal{N}_j \right] \pi_q} \textcolor{violet}{+ \left[ \sum_{j=1}^\text{NS} a_{kj} \mathcal{N}_j \frac{H_j^\circ}{\hat{R}T} \right] \Delta \ln T}
     \\ = \textcolor{red}{b_k^\circ - \sum_{j=1}^\text{NS} a_{kj} \mathcal{N}_j + \sum_{j=1}^\text{NS} a_{kj} \mathcal{N}_j \frac{\mu_j}{\hat{R}T}}
-    \label{GRed}
+    \label{GRed1}
 \end{multline}
 
 \begin{multline}
@@ -736,19 +736,19 @@ The final derivative is:
     \boxed{ \frac{\partial}{\partial [\ln(T)]} \left( \frac{\mu_j^0}{RT} \right) = -\frac{U_j^0}{RT} - 1}
 \end{equation}
 
-\section{Code description}
+\section{Quick code overview}
 
-Currently, the University of Minnesota's code is focused on Gibbs minimization holding TP constant, and Helmholtz minimization holding TV, and UV constant. Further development will include the other three auxiliary constraints. It also includes the charge constraint if ions are present in the mixture. The code comes with easily accessible functions for common air mixtures such as 5, 7, and 11 species air for  apllications in aer. The ability to create mixtures from any user-specified mixture is available if necessary.   
+Currently, this code is focused on Gibbs minimization holding TP constant, and Helmholtz minimization holding TV, and UV constant. Further development will include the other three auxiliary constraints. It also includes the charge constraint if ions are present in the mixture. The code comes with easily accessible functions for common air mixtures such as 5, 7, and 11 species air for applications in the aerospace industry. The ability to create mixtures from any user-specified mixture is available if necessary.   
 \vspace{5mm}
 \\ Access to all thermodynamic data is readily available through use of the object \verb|mix|. By defining an object named 'gas' of type \verb|mix|, the user can find all thermodynamic variables necessary after minimization by appending the correct suffix to 'gas', e.g., \verb|gas.rho| contains mixture density, \verb|gas.R| contains mixture gas constant, \verb|gas.Y[j]| shows mass fraction of species $j$, etc. A function named \verb|print_properties(gas)| will output all thermodynamic variables of the gas mixture to the terminal. 
 \vspace{5mm}
-\\ In the bin directory of this code, there are three programs ready to be run and/or edited after you build. The first is an example program (named example.cpp) that has everything defined for you to run it and see the minimization results. You can toy with options to understand how to use correct `enum class` such as \verb|ConstraintType::| (both defined below) and access results.
+\\ In the bin directory of this code, there are three programs ready to be run and/or edited after you build. The first is an example program (fittingly named example.cpp) that has everything defined for you to run it and see the minimization results. You can toy with options to understand how to use correct `enum class` such as \verb|ConstraintType::| (both defined below) and access results.
 \vspace{5mm}
-\\The second program is the command-line driven code that lets you choose options and set mixtures for the chemical equilibrium process. The program has a "help" command that will tell you what you need to run. An overview is given here as well. When you start the program, it will give you some options right off the bat. In order to run minimization, all fields need to filled in that appear when you type "show". The "--constraint" field initialized by default to use the TP constraint, though it can readily be changed. 
+\\The second program is the command-line driven code that lets you choose options and set mixtures for the chemical equilibrium process. The program has a "help" command that will tell you what you need to run. An overview is given here as well. When you start the program, it will give you some options right off the bat. In order to run minimization, all fields need to filled in that appear when you type "show" . 
 \vspace{5mm}
-\\The `--mode` option tells the program which mode it is running in. By inputting `--mode= sweep` you can change the program from a standalone minimization given a single values for minimization parameters, to a version that sweeps through an user-input min and max energy value and then plots the results to a user-named file.
+\\The `--mode` option tells the program which mode it is running in. By inputting `--mode= sweep` you can change the program from a standalone minimization given a single value for minimization parameters, to a version that sweeps through an user-input min and max energy value and then plots the results to a user-named file. It is initialized by default to used single values and not sweep.
 \vspace{5mm}
-\\The `--constraint` option tells the programs with minimization procedure to use. TP, TV, UV, CFD are the current ones available. It needs to be in caps when input as well. For example`--constraint=TP`.
+\\The `--constraint` option tells the programs which minimization procedure to use. TP, TV, UV, CFD are the current ones available. It needs to be in caps when input as well. For example`--constraint=TP`. 
 \vspace{5mm}
 \\The `--species` option tells the program which species you want to include in the minimization process. You can list your own with comma separated variables as such: `--species= N2, O2, NO, N, O`. If you choose to build a species list this way, you will need to specify a couple more things like `--elements` and `--Y`. If instead you use an already created mixture (available ones are air5, air7, air11, air13, mars8), you can do so with `--species= air11`. This will fill in the `--elements` and `--Y` flags for you as well. You can always double check what needs to be filled in with the `show` command.
 \vspace{5mm}
@@ -757,6 +757,79 @@ Currently, the University of Minnesota's code is focused on Gibbs minimization h
 \\When the configuration input has been filled in, typing "run" in the command line will run the program for you. You will still need to follow command line prompts for specifying filenames, sweeping values, etc.
 \vspace{5mm}
 \\Finally, the third program is created for timing the speed of the minimization processes and is really more for developing than for getting values.
+
+\section{Code specifics}
+\subsection{Overview}
+The code uses a class named \verb|CESolver| to run the minimization process. Most of the functionality uses private-member functions which make use of class member variables so that no inputs to functions are required. Of course, any function that needs to be accessed outside of the library is a public-member function. A separate file names \verb|functions.h| contains two namespaces for Gibbs and Helmholtz energy minimization procedures, namely for computing the chemical potential and filling the Jacobian and RHS for the Newton solver, since they are done differently in each case. 
+\vspace{5mm}
+\\In order to run the minimization, you need to first create a few objects. First, you need to create an instance of the \verb|mix| type. This contains vectors of size NS of a type called \verb|SpeciesInfo|. \verb|SpeciesInfo| contains all the data that is read in from the NASA thermodynamic table for a single species. Therefore, \verb|mix| contains a vector of this type to easily access. \verb|mix| contains all mixture properties, and also the current solution for $\mathcal{N}_j$, and other vectors such as the stoichiometric coefficients. Everything that \verb|SpeciesInfo| and \verb|mix| contains can be found in the header file \verb|thermoObjs.h|. There are only a couple of other \verb|CESolver| member variables besides the main \verb|mix| type, but they are mostly just sizes of the Jacobian and RHS vectors, sizes of species list, element list, etc. 
+\vspace{5mm}
+\\ You can instantiate a gas mixture using one of two functions. \verb|mix gas = common_mixture(GasType::air11)| is an example of the function call to create a \verb|mix| using the enum class \verb|GasType::|, which holds commonly used gas mixtures. Current common mixtures are:
+
+\begin{itemize}
+    \item \verb|GasType::AIR5| - contains $N_2$, $O_2$, $NO$, $N$, $O$.
+    \item \verb|GasType::AIR7| - contains $N_2$, $O_2$, $NO$, $N$, $O$, $NO^+$, $e^-$.
+    \item \verb|GasType::AIR11| - contains $N_2$, $O_2$, $NO$, $N$, $O$, $N_2^+$, $O_2^+$, $NO^+$, $N^+$, $O^+$, $e^-$.
+    \item \verb|GasType::AIR11_AR| - contains $N_2$, $O_2$, $NO$, $N$, $O$, $Ar$, $Ar^+$, $NO^+$, $N^+$, $O^+$, $e^-$.
+    \item \verb|GasType::AIR13| - contains $N_2$, $O_2$, $NO$, $N$, $O$, $Ar$, $Ar^+$, $N_2^+$, $O_2^+$, $NO^+$, $N^+$, $O^+$, $e^-$.
+\end{itemize}
+
+For creation of your own mixture, you must define three vectors. The first is a vector of strings that contains the names of the species in your mixture. The second, a vector of strings that contains the names of the elements in your mixture. The third is a vector of doubles that hold the mass fractions of your elements (in the same ordering as the list of your element names). For example:
+\vspace{5mm}
+\\ \verb|vector<string> species = {"N2", "O2", "NO", "N", "O"};|
+\\ \verb|vector<string> elements = {"N", "O"};|
+\\ \verb|vector<double> Y_initial = {0.7572, 0.2428}|
+\vspace{5mm}
+\\You can then create your mix via:
+\vspace{5mm}
+\\ \verb|mix gas = create_mixture(species, elements, Y_initial);|
+\vspace{5mm}
+\\ The next step is to use the enum class \verb|ConstraintType::| to define the constraint you want to use in the minimization process. Currently provided constraints are:
+
+\begin{itemize}
+    \item \verb|ConstraintType::TP| - Minimize Gibbs free-energy holding temperature and pressure constant.
+    \item \verb|ConstraintType::TV| - Minimize Helmholtz free-energy holding temperature and specific volume constant.
+    \item \verb|ConstraintType::UV| - Minimize Helmholtz free-energy holding internal energy and specific volume constant.
+    \item \verb|ConstraintType::CFD| - Minimize Helmholtz free-energy holding internal energy and density constant.
+\end{itemize}
+
+The constructor function automatically checks to see which constraint type pertains to which energy minimization method, so you do not have to specify if you are minimizing with Gibbs or Helmholtz energies. This can be done inside the \verb|CESolver| class-constructor function call:
+\vspace{5mm}
+\\ \verb|CEsolver CE(gas, ConstraintType::TP)|
+\vspace{5mm}
+\\ Where gas is our previously created \verb|mix|, and \verb|ConstraintType::TP| means we want to minimize Gibbs free-free energy holding temperature and pressure constant. This command sets up our solver by letting the solver know which equations need to be used (are ions present, do we need to solve for temperature, which temperature minimization equation are we using). Once the above is known, it creates a pointer to a function that uses the correct minimization function. Because of the pointer, you can just call
+\vspace{5mm}
+\verb|compute_equilibrium(1000.0, 101325.0)| 
+\vspace{5mm} 
+\\ The inputs are arranged in the order of the \verb|ConstraintType::| that you put into the \verb|CESolver| constructor. Since we used TP, the above will set T = 1000.0 K, and P = 1013125.0 Pa. This function is called for every constraint type you use except for \verb|ContraintType::CFD|, which will force you to call \verb|CFD_equilibrium(e, rho)| instead of the universal \verb|compute_equilibrium()| function.
+\vspace{5mm}
+
+\subsection{Function details}
+
+\subsubsection{Constructor function}
+
+The constructor function, \verb|CESolver(mix, ConstraintType::)|, checks the \verb|mix| object and constraint type to create the function pointer to the correct minimization function as well as create the sizes of the Newton-Raphson method solver. It does so through checking and changing certain booleans. For example, if the mixture has ionic species present, the \verb|mix| boolean \verb|HAS_IONS| is flagged as true. The \verb|ConstraintType::|  will set the \verb|mix| boolean \verb|NEEDS_T| to true or false depending on the constraint. Then, the number of equation that need to be solver for is \verb|J_SIZE = NS + gas.HAS_IONS + gas.NEEDS_T|.
+
+\subsubsection{compute\_equilibriumXY() functions}
+
+There are a number of these functions at the moment for each separate constraint. Unfortunately, each minimization function is a little different, so thought will need to be put into a method to combine everything into one function to reduce the amount of code duplication. 
+\vspace{5mm}
+This function takes
+
+\subsubsection{NASA\_fits()}
+
+\subsubsection{Namespace functions}
+
+\subsubsection{compute\_mixture\_properties()}
+
+\subsubsection{compute\_derivatives()}
+
+\subsubsection{compute\_derivativesCFD()}
+
+\subsubsection{check\_convergence()}
+
+\subsubsection{compute\_damping()}
+
 
 
 
