@@ -16,8 +16,8 @@ enum class RunMode {
 struct Config {
     RunMode mode = RunMode::Single;
     string modestring = "single";
-    ConstraintType constraint = ConstraintType::TP;
-    string constraintstring = "TP";
+    ConstraintType constraint;
+    string constraintstring;
     vector<string> species;
     vector<string> elements;
     vector<double> initial;
@@ -224,9 +224,9 @@ void run_sweep(double min, double max, double val2, Config cfg, mix gas, string 
     write << "VARIABLES = \"T [K]\"";
     for (int j = 0; j < gas.NS; ++j) {
         if (mass == true)
-            write << ", \"Y(" << gas.species[j].name << ")\"";
+            write << ", \"Y[" << gas.species[j].name << "]\"";
         else    
-            write << ", \"X(" << gas.species[j].name << ")\"";
+            write << ", \"X[" << gas.species[j].name << "]\"";
     }
     write << "\n";
 

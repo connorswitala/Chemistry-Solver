@@ -6,12 +6,12 @@ using namespace std;
 
 int main() {
 
-    // ====== Create gas mix using enum class for common mixes
+    // ======: Create gas mix using enum class for common mixes :======
 
     mix gas = common_mixture(GasType::AIR11);                        
 
 
-    // ======= Create user-defined mix ======
+    // =======: Create user-defined mix (Mars 8-species) :======
 
     // vector<string> species = {"CO2", "N2", "O2", "CO", "O", "C", "NO", "N"};        
     // vector<string> elements = {"C", "O", "N"};
@@ -22,41 +22,13 @@ int main() {
     ConstraintType constraint = ConstraintType::TP;     // Set minimization procedure (temperature, pressure held constant in this case).
     CESolver CE(gas, constraint);                       // Construct CESolver class for minimization.
 
+    CE.compute_equilibrium(5000.0, 101325.0);  // Solve for equilibrium at T = 5000.0 K, and P = 101325.0 Pa
 
-    string filename = "../user-files/air11_moles.dat";
-    ofstream write(filename);
-    if (!write) {
-        cerr << "Failed to open " << filename << " for writing.\n";
-        exit;
-    }
+    print_properties(gas);  // Print mixture properties
+    print_NASA_mix(gas);    // Print NASA thermodynamic table data for mixture (used for debugging)
 
-    // Buffers for BLOCK output
-    int N = 5000;
-    double T;
-
-        // ===== Tecplot ASCII Header (BLOCK format) =====
-    // Title
-    write << "TITLE = \"Equilibrium TP Sweep: " << gas.name << "\"\n";
-
-    // Variables: T, P, and species mass fractions
-    write << "VARIABLES = \"T [K]\"";
-    for (int j = 0; j < gas.NS; ++j) {
-        write << ", \"X[" << gas.species[j].name << "]\"";
-    }
-    write << "\n";
-
-    // One 1D zone with N points
-    write << "ZONE T=\"Sweep\", I=" << N << ", F=POINT\n";
-
-    for (int i =  0; i < N; ++i) {
-        T = 300.0 + (20000.0 - 300.0) / (N - 1) * double(i);
-        CE.compute_equilibrium(T, 101325.0); 
-
-        write << T;
-        for (int j = 0; j < gas.NS; ++j)
-            write << ", " << gas.X[j];
-        write << endl;
-    }
-
+    cout << gas.R << endl;      // Print just mixture specific gas constant
+    cout << gas.Y[0] << endl;   // Print just species [0] mass fraction.
+    
     return 0;
 }

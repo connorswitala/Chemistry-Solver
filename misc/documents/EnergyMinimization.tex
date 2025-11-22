@@ -59,30 +59,30 @@
 \tableofcontents
 \newpage
 
-\nomenclature{$\mathcal{N}$}{Total number of moles in the system}
-\nomenclature{$\mathcal{N}_j$}{Number of moles of species $j$ in the system}
+\nomenclature{$\mathcal{N}$}{Total kg-moles per unit mass in the system}
+\nomenclature{$\mathcal{N}_j$}{Number of kg-moles per unit mass of species $j$ in the system}
 \nomenclature{$\mathcal{L}$}{The Lagrangian}
-\nomenclature{$a_{ij}$}{Stoichiometric coefficients, e.g. number of atoms of element $i$ in species $j$}
-\nomenclature{$\hat{R}$}{Universal gas constant $\approx$ 8.314 J/kg-K}
+\nomenclature{$a_{ij}$}{Stoichiometric coefficients, e.g. number of atoms of element $i$ in species $j$. Weighted by element $i$'s moelcular weight}
+\nomenclature{$\hat{R}$}{Universal gas constant $\approx$ 8314 kJ/kg-K}
 \nomenclature{$b_i$}{Sum of contributions from each species towards constraint for element $i$, i.g. $\sum_{j=1}^\text{NS} a_{i,j}\mathcal{N}_j$}
 \nomenclature{$p_\text{ref}$}{Reference temperature used to compute chemical potential}
 \nomenclature{$G$}{Gibbs free-energy}
-\nomenclature{$F$}{Helmholtz energy}
+\nomenclature{$F$}{Helmholtz free-energy}
 \nomenclature{$T$}{Temperature (K)}
 \nomenclature{$q_j$}{Charge of species $j$ (0 for neutrals, 1 for ions, -1 for electrons)}
-\nomenclature{$V$}{Volume ($m^3$)}
-\nomenclature{$\rho$}{Density ($kg/m^3$}
-\nomenclature{$MW_j$}{Molecular weight of species $j$}
+\nomenclature{$V$}{Specific volume ($m^3/$kg)}
+\nomenclature{$\rho$}{Density ($kg/m^3)$}
+\nomenclature{$MW_j$}{Molecular weight of species $j$ in kg / kg-mole}
 \nomenclature{$\lambda$}{Lagrange multiplier}
 \nomenclature{$\mu_j$}{Chemical potential of species $j$}
 \nomenclature{$\mu_j^\circ$}{Standard state chemical potential of species $j$}
 \nomenclature{$b_i^\circ$}{Specified number of moles of element $i$}
-\nomenclature{$U_j^\circ$}{Standard state internal energy of species $j$}
-\nomenclature{$H_j^\circ$}{Standard state enthalpy of species $j$}.
+\nomenclature{$U_j^\circ$}{Standard state internal energy of species $j$ (J/kg)}
+\nomenclature{$H_j^\circ$}{Standard state enthalpy of species $j$ (J/kg)}.
 \nomenclature{$c_{v,j}^\circ$}{Standard state specific heat of species $j$}
 \nomenclature{$c_{p,j}^\circ$}{Standard state specific heat of species $j$}
-\nomenclature{$u_0'$}{User-specified internal energy}
-\nomenclature{$h_0'$}{User-specified enthalpy}
+\nomenclature{$u_0'$}{User-specified internal energy (J/kg)}
+\nomenclature{$h_0'$}{User-specified enthalpy (J/kg)}
 \nomenclature{$u'$}{Sum of contributions from each species towards internal energy constraint, i.g. $\sum_{j}^\text{NS} \mathcal{N}_j U_j^\circ$}
 \nomenclature{$h'$}{Sum of contributions from each species towards enthalpy  constraint, i.g. $\sum_{j}^\text{NS} \mathcal{N}_j H_j^\circ$}
 
@@ -736,13 +736,27 @@ The final derivative is:
     \boxed{ \frac{\partial}{\partial [\ln(T)]} \left( \frac{\mu_j^0}{RT} \right) = -\frac{U_j^0}{RT} - 1}
 \end{equation}
 
-\newpage
-
 \section{Code description}
 
-The University of Minnesota's code for computing chemical equilibrium of a gas mixture uses the well documented method of Gibbs and Helmholtz energy minimization with Lagrange multipliers as well as charge constraints for ionized gas mixtures as well as enthalpy, entropy, and internal energy constraints depending on the minimization method. It computes the composition and thermodynamic state of gas mixtures. 
-
-
+Currently, the University of Minnesota's code is focused on Gibbs minimization holding TP constant, and Helmholtz minimization holding TV, and UV constant. Further development will include the other three auxiliary constraints. It also includes the charge constraint if ions are present in the mixture. The code comes with easily accessible functions for common air mixtures such as 5, 7, and 11 species air for  apllications in aer. The ability to create mixtures from any user-specified mixture is available if necessary.   
+\vspace{5mm}
+\\ Access to all thermodynamic data is readily available through use of the object \verb|mix|. By defining an object named 'gas' of type \verb|mix|, the user can find all thermodynamic variables necessary after minimization by appending the correct suffix to 'gas', e.g., \verb|gas.rho| contains mixture density, \verb|gas.R| contains mixture gas constant, \verb|gas.Y[j]| shows mass fraction of species $j$, etc. A function named \verb|print_properties(gas)| will output all thermodynamic variables of the gas mixture to the terminal. 
+\vspace{5mm}
+\\ In the bin directory of this code, there are three programs ready to be run and/or edited after you build. The first is an example program (named example.cpp) that has everything defined for you to run it and see the minimization results. You can toy with options to understand how to use correct `enum class` such as \verb|ConstraintType::| (both defined below) and access results.
+\vspace{5mm}
+\\The second program is the command-line driven code that lets you choose options and set mixtures for the chemical equilibrium process. The program has a "help" command that will tell you what you need to run. An overview is given here as well. When you start the program, it will give you some options right off the bat. In order to run minimization, all fields need to filled in that appear when you type "show". The "--constraint" field initialized by default to use the TP constraint, though it can readily be changed. 
+\vspace{5mm}
+\\The `--mode` option tells the program which mode it is running in. By inputting `--mode= sweep` you can change the program from a standalone minimization given a single values for minimization parameters, to a version that sweeps through an user-input min and max energy value and then plots the results to a user-named file.
+\vspace{5mm}
+\\The `--constraint` option tells the programs with minimization procedure to use. TP, TV, UV, CFD are the current ones available. It needs to be in caps when input as well. For example`--constraint=TP`.
+\vspace{5mm}
+\\The `--species` option tells the program which species you want to include in the minimization process. You can list your own with comma separated variables as such: `--species= N2, O2, NO, N, O`. If you choose to build a species list this way, you will need to specify a couple more things like `--elements` and `--Y`. If instead you use an already created mixture (available ones are air5, air7, air11, air13, mars8), you can do so with `--species= air11`. This will fill in the `--elements` and `--Y` flags for you as well. You can always double check what needs to be filled in with the `show` command.
+\vspace{5mm}
+\\If you do need to specifiy elements and mass fractions, you can do so with `--elements= N, O` and also `-Y= 0.7572, 0.2428`. Just make sure that the order that you input the mass fractions lines up with the elemental ordering.
+\vspace{5mm}
+\\When the configuration input has been filled in, typing "run" in the command line will run the program for you. You will still need to follow command line prompts for specifying filenames, sweeping values, etc.
+\vspace{5mm}
+\\Finally, the third program is created for timing the speed of the minimization processes and is really more for developing than for getting values.
 
 
 

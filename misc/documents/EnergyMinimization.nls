@@ -1,31 +1,31 @@
 
 \begin{thenomenclature} 
 \nomgroup{A}
-  \item [{$\hat{R}$}]\begingroup Universal gas constant $\approx$ 8.314 J/kg-K\nomeqref {0.0}\nompageref{2}
+  \item [{$\hat{R}$}]\begingroup Universal gas constant $\approx$ 8314 kJ/kg-K\nomeqref {0.0}\nompageref{2}
   \item [{$\lambda$}]\begingroup Lagrange multiplier\nomeqref {0.0}\nompageref{2}
   \item [{$\mathcal{L}$}]\begingroup The Lagrangian\nomeqref {0.0}\nompageref{2}
-  \item [{$\mathcal{N}$}]\begingroup Total number of moles in the system\nomeqref {0.0}\nompageref{2}
-  \item [{$\mathcal{N}_j$}]\begingroup Number of moles of species $j$ in the system\nomeqref {0.0}\nompageref{2}
+  \item [{$\mathcal{N}$}]\begingroup Total kg-moles per unit mass in the system\nomeqref {0.0}\nompageref{2}
+  \item [{$\mathcal{N}_j$}]\begingroup Number of kg-moles per unit mass of species $j$ in the system\nomeqref {0.0}\nompageref{2}
   \item [{$\mu_j$}]\begingroup Chemical potential of species $j$\nomeqref {0.0}\nompageref{2}
   \item [{$\mu_j^\circ$}]\begingroup Standard state chemical potential of species $j$\nomeqref {0.0}\nompageref{2}
-  \item [{$\rho$}]\begingroup Density ($kg/m^3$\nomeqref {0.0}\nompageref{2}
-  \item [{$a_{ij}$}]\begingroup Stoichiometric coefficients, e.g. number of atoms of element $i$ in species $j$\nomeqref {0.0}\nompageref{2}
+  \item [{$\rho$}]\begingroup Density ($kg/m^3)$\nomeqref {0.0}\nompageref{2}
+  \item [{$a_{ij}$}]\begingroup Stoichiometric coefficients, e.g. number of atoms of element $i$ in species $j$. Weighted by element $i$'s moelcular weight\nomeqref {0.0}\nompageref{2}
   \item [{$b_i$}]\begingroup Sum of contributions from each species towards constraint for element $i$, i.g. $\sum_{j=1}^\text{NS} a_{i,j}\mathcal{N}_j$\nomeqref {0.0}\nompageref{2}
   \item [{$b_i^\circ$}]\begingroup Specified number of moles of element $i$\nomeqref {0.0}\nompageref{2}
   \item [{$c_{p,j}^\circ$}]\begingroup Standard state specific heat of species $j$\nomeqref {0.0}\nompageref{2}
   \item [{$c_{v,j}^\circ$}]\begingroup Standard state specific heat of species $j$\nomeqref {0.0}\nompageref{2}
-  \item [{$F$}]\begingroup Helmholtz energy\nomeqref {0.0}\nompageref{2}
+  \item [{$F$}]\begingroup Helmholtz free-energy\nomeqref {0.0}\nompageref{2}
   \item [{$G$}]\begingroup Gibbs free-energy\nomeqref {0.0}\nompageref{2}
   \item [{$h'$}]\begingroup Sum of contributions from each species towards enthalpy  constraint, i.g. $\sum_{j}^\text{NS} \mathcal{N}_j H_j^\circ$\nomeqref {0.0}\nompageref{2}
-  \item [{$h_0'$}]\begingroup User-specified enthalpy\nomeqref {0.0}\nompageref{2}
-  \item [{$H_j^\circ$}]\begingroup Standard state enthalpy of species $j$\nomeqref {0.0}\nompageref{2}
-  \item [{$MW_j$}]\begingroup Molecular weight of species $j$\nomeqref {0.0}\nompageref{2}
+  \item [{$h_0'$}]\begingroup User-specified enthalpy (J/kg)\nomeqref {0.0}\nompageref{2}
+  \item [{$H_j^\circ$}]\begingroup Standard state enthalpy of species $j$ (J/kg)\nomeqref {0.0}\nompageref{2}
+  \item [{$MW_j$}]\begingroup Molecular weight of species $j$ in kg / kg-mole\nomeqref {0.0}\nompageref{2}
   \item [{$p_\text{ref}$}]\begingroup Reference temperature used to compute chemical potential\nomeqref {0.0}\nompageref{2}
   \item [{$q_j$}]\begingroup Charge of species $j$ (0 for neutrals, 1 for ions, -1 for electrons)\nomeqref {0.0}\nompageref{2}
   \item [{$T$}]\begingroup Temperature (K)\nomeqref {0.0}\nompageref{2}
   \item [{$u'$}]\begingroup Sum of contributions from each species towards internal energy constraint, i.g. $\sum_{j}^\text{NS} \mathcal{N}_j U_j^\circ$\nomeqref {0.0}\nompageref{2}
-  \item [{$u_0'$}]\begingroup User-specified internal energy\nomeqref {0.0}\nompageref{2}
-  \item [{$U_j^\circ$}]\begingroup Standard state internal energy of species $j$\nomeqref {0.0}\nompageref{2}
-  \item [{$V$}]\begingroup Volume ($m^3$)\nomeqref {0.0}\nompageref{2}
+  \item [{$u_0'$}]\begingroup User-specified internal energy (J/kg)\nomeqref {0.0}\nompageref{2}
+  \item [{$U_j^\circ$}]\begingroup Standard state internal energy of species $j$ (J/kg)\nomeqref {0.0}\nompageref{2}
+  \item [{$V$}]\begingroup Specific volume ($m^3/$kg)\nomeqref {0.0}\nompageref{2}
 
 \end{thenomenclature}
